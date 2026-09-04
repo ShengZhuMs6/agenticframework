@@ -55,6 +55,8 @@ scripts/
                         grants Purview access, bootstraps, verifies. 12 steps, all re-runnable.
   Set-CortexAuth.ps1    Entra app registration + groups claim + Container Apps auth + group
                         mapping + default group. Idempotent.
+  Add-CortexUser.ps1    Give a person access: B2B guest invitation (Graph /invitations) with
+                        Cortex as the landing page, plus group membership. Idempotent.
   Preprovision-Check.ps1 azd hook. Guards a bare `azd up` against the two known provision failures.
   Set-CortexEnv.ps1     Dot-source to load config into a session, for running bootstrap by hand.
   Start-Local.ps1       Run on your machine against real Azure.
@@ -217,6 +219,7 @@ These cost real time to establish. They were correct in August 2026 and several 
 - **Comments explain *why*.** The code says what it does; comments should say why it is that way, especially where a shape is surprising or a rule is load-bearing.
 - **Business language in the UI.** No jargon, no product names in user-facing copy where a plain word will do.
 - **Infrastructure must survive a re-run.** Assume every template is applied many times. Anything that only works the first time is a bug, not a limitation.
+- **Users from other tenants are guests, never a second identity provider.** The app registration stays single-tenant; `Add-CortexUser.ps1` invites them in, and `identity.js` shows a guest by the address in their `preferred_username`/`email` claim rather than the synthetic `#EXT#` UPN. Making the app multi-tenant would put foreign group ids in the token, which nothing maps.
 - **Configuration has two supported sources, and the app must not care which.** Key Vault when it is reachable, the environment otherwise. `SECRET_CATALOGUE` in `adapters/keyvault.js` is the contract between them: add a value there and to `containerapps.bicep`, or it will work in one mode and not the other.
 - **Never write a bearer header as one literal.** Use the `bearer(token)` helper each adapter defines. Source that travels through a chat or transfer tool comes back with credential-shaped text masked — including template literals — and the result parses and then fails every call. Deploy-Cortex.ps1 step 1 checks for it.
 - **Bound every outbound call.** `AbortSignal.timeout` on every `fetch`; the adapters have per-call and per-answer budgets in config. A hanging back end must degrade a page, not hang it.
