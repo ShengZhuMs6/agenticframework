@@ -27,7 +27,8 @@ export const NAV = [
   ['/build', 'Build an agent', 'build'],
   ['/share', 'Share your data', 'share'],
   ['/requests', 'Requests', 'requests'],
-  ['/automate', 'Automate a task', 'automate']
+  ['/automate', 'Automate a task', 'automate'],
+  ['/about', 'About', 'about']
 ];
 
 /** Escape untrusted values for HTML. Every interpolation goes through this. */
@@ -175,6 +176,7 @@ ${identityBar(ctx)}
     <div class="govuk-footer__meta">
       <div>
         <ul class="govuk-footer__inline-list">
+          <li><a class="govuk-link" href="/about">About Cortex</a></li>
           <li><a class="govuk-link" href="/help">Help</a></li>
           <li><a class="govuk-link" href="/help/accessibility">Accessibility statement</a></li>
           <li><a class="govuk-link" href="/help/privacy">Privacy</a></li>
