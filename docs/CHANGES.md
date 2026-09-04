@@ -1,5 +1,30 @@
 # What changed — 3 September 2026
 
+## Addendum 5 (4 Sep): an About page
+
+`/about` — the story of Cortex for two audiences on one page: leadership first
+(the problem, what changes, why it is safe, what we need), then what it means
+for the person using it, then how it is built. It is reachable from a new
+**About** item after *Automate a task* in the service navigation and from the
+footer. The copy is drawn from `docs/ARCHITECTURE.md`, `docs/HANDOVER.md` and
+the Strategic Innovation Team's as-is / to-be deck, in business language.
+
+Two rules carried over from the rest of the service. **No client JavaScript**:
+the architecture diagram is inline SVG with a text alternative, the journey,
+comparison and cycle visuals are CSS, and the whole page works with scripts
+off. **No number without a source**: the only figures are read live from the
+register (`index.stats()` / `index.coverage()`); the seven-handoffs example
+says it is a worked example, not a measurement, and the deck's "80% of
+requests" line was left out because it is labelled illustrative there too.
+
+`src/web/views/about.js` is new. `layout.js` gains the nav entry and footer
+link; `server.js` gains the route and `image/jpeg` + `image/webp` MIME types
+for the banner (`src/web/assets/about-hero.jpg`, 86 KB); `cortex.css` gains the
+`.cortex-about-*` rules plus the `one-half` grid column, `govuk-list--number`
+and `govuk-details` styles the fallback stylesheet was missing.
+`test/smoke.test.js` opens `/about` and asserts the live figures, the text
+alternative, the active nav item and the absence of `<script>`.
+
 ## Addendum 4 (4 Sep): inviting people from other tenants
 
 `scripts/Add-CortexUser.ps1` — give somebody access: a colleague, or your own

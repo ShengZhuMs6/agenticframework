@@ -49,7 +49,7 @@ async function page(path, init) {
 }
 
 describe('every demo page renders', () => {
-  for (const path of ['/', '/marketplace', '/marketplace/map', '/build', '/build/new', '/share', '/requests', '/profile', '/help']) {
+  for (const path of ['/', '/marketplace', '/marketplace/map', '/build', '/build/new', '/share', '/requests', '/profile', '/about', '/help']) {
     test(`${path} is 200 and not the error page`, async () => {
       const r = await page(path);
       assert.equal(r.status, 200, path);
@@ -62,6 +62,16 @@ describe('every demo page renders', () => {
     assert.equal(r.status, 200);
     assert.match(r.body, /Water quality archive/);
     assert.match(r.body, /Catalogue status/);
+  });
+
+  test('the About page reads its figures from the register and links every section', async () => {
+    const r = await page('/about');
+    assert.equal(r.status, 200);
+    assert.match(r.body, /entries in the register today/);
+    assert.match(r.body, /Text version of this diagram/, 'the architecture diagram has a text alternative');
+    assert.ok(!/<script/i.test(r.body), 'no client JavaScript');
+    assert.match(r.body, /href="\/about"[^>]*aria-current="page"/, 'About is the active section');
+    assert.match(r.body, /<svg[^>]*role="img"/, 'the architecture diagram is an accessible inline SVG');
   });
 
   test('the Marketplace resolves a domain slug in the filter to the same entries as the id', async () => {

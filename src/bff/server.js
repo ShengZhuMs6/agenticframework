@@ -22,6 +22,7 @@ import { decorate, visibilityFor, VIS, VIS_ORDER } from './services/visibility.j
 import { marketplacePage } from '../web/views/marketplace.js';
 import { entryPage, entryNotFoundPage } from '../web/views/entry.js';
 import { startPage, placeholderPage, helpPage, errorPage, profilePage } from '../web/views/pages.js';
+import { aboutPage } from '../web/views/about.js';
 import {
   buildLandingPage,
   buildFormPage,
@@ -63,6 +64,9 @@ const MIME = {
   '.js': 'text/javascript; charset=utf-8',
   '.svg': 'image/svg+xml',
   '.png': 'image/png',
+  '.jpg': 'image/jpeg',
+  '.jpeg': 'image/jpeg',
+  '.webp': 'image/webp',
   '.ico': 'image/x-icon',
   '.json': 'application/json; charset=utf-8'
 };
@@ -849,6 +853,12 @@ async function handle(req, res) {
         ]
       })
     );
+  }
+
+  // The story for leadership and new users. The only figures on it are read
+  // live from the register, so it can never contradict the Marketplace.
+  if (pathname === '/about') {
+    return send(res, 200, aboutPage(ctx, { stats: index.stats(), coverage: index.coverage() }));
   }
 
   if (pathname === '/help' || pathname.startsWith('/help/')) {

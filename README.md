@@ -49,6 +49,7 @@ node scripts/bootstrap.js --dry-run   # validate content, no Azure needed
 | **Ask** | A Foundry agent (`cortex-ask`) answers from the catalogue entries the asker can reach, citing them. Provenance panel: sources, freshness, confidence, what it could not reach — and how the answer was produced |
 | **Requests** | A working lifecycle — the holder's agent drafts inside *their* permissions, a person reviews the method and releases |
 | **Share your data** | Gateway registration, ownership confirmation, the access-request queue |
+| **About** | The story for leadership and new users — the problem, what changes, why it is safe, how it is built, where it is going. Its only figures are read live from the register |
 
 ## The governance model
 
