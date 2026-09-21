@@ -16,13 +16,32 @@
 
 import { esc, attr, layout } from '../layout.js';
 
-export function mapPage(ctx, { clusters, links, cross, coverage, counts, unclustered }) {
+export function layoutDomains(domains, counts) {
+  const sorted = [...domains].sort((a, b) => String(a.name).localeCompare(String(b.name)) || a.id.localeCompare(b.id));
+  const columns = Math.min(4, Math.max(1, sorted.length));
+  const width = columns * 280;
+  const height = Math.max(240, Math.ceil(sorted.length / columns) * 240);
+  const maximum = Math.max(1, ...sorted.map((c) => counts[c.id] || 0));
+  return {
+    width, height,
+    clusters: sorted.map((c, i) => ({
+      ...c,
+      x: (i % columns) * 280 + 140,
+      y: Math.floor(i / columns) * 240 + 120,
+      r: 55 + 35 * Math.sqrt((counts[c.id] || 0) / maximum)
+    }))
+  };
+}
+
+export function mapPage(ctx, { clusters: domains, links, cross, coverage, counts, unclustered, errors = {} }) {
+  // Purview returns metadata, not the coordinates the retired seed pack supplied.
+  const { clusters, width, height } = layoutDomains(domains, counts);
   const svg = `
-<svg viewBox="0 0 1120 680" width="100%" height="auto" role="img"
-     aria-labelledby="map-title map-desc" style="max-width:100%;border:1px solid #b1b4b6;background:#fff">
-  <title id="map-title">Map of the Defra data estate by cluster</title>
+<svg viewBox="0 0 ${width} ${height}" width="${width}" height="${height}" role="img"
+     aria-labelledby="map-title map-desc" style="display:block;max-width:100%;height:auto;border:1px solid #b1b4b6;background:#fff">
+  <title id="map-title">Map of the data estate by governance domain</title>
   <desc id="map-desc">
-    Nine clusters drawn as circles sized by how much each contains, with lines
+    ${clusters.length} domains drawn as circles sized by how much each contains, with lines
     showing dependencies that cross between them. The same information is in the
     table below this image.
   </desc>
@@ -43,7 +62,8 @@ export function mapPage(ctx, { clusters, links, cross, coverage, counts, unclust
     .join('')}
   ${clusters
     .map(
-      (c) => `<g>
+      (c) => `<a href="/marketplace?cluster=${attr(encodeURIComponent(c.id))}" aria-label="${attr(c.name)}: ${counts[c.id] || 0} registered entries"><g>
+        <title>${esc(c.name)}</title>
         <circle cx="${c.x}" cy="${c.y}" r="${c.r}" fill="#f3f2f1" stroke="#0b0c0c" stroke-width="2" />
         <text x="${c.x}" y="${c.y - 8}" text-anchor="middle" font-size="15" font-weight="700" fill="#0b0c0c">${esc(
           c.name.length > 20 ? c.name.slice(0, 19) + '…' : c.name
@@ -52,7 +72,7 @@ export function mapPage(ctx, { clusters, links, cross, coverage, counts, unclust
           counts[c.id] || 0
         )}</text>
         <text x="${c.x}" y="${c.y + 30}" text-anchor="middle" font-size="12" fill="#505a5f">registered</text>
-      </g>`
+      </g></a>`
     )
     .join('')}
 </svg>`;
@@ -89,7 +109,8 @@ export function mapPage(ctx, { clusters, links, cross, coverage, counts, unclust
   </div>
 </div>
 
-${svg}
+${Object.keys(errors).length ? '<div class="govuk-inset-text" role="status">Some connected services could not refresh. This map may be incomplete or show previously loaded metadata. See <a class="govuk-link" href="/help">service health</a>.</div>' : ''}
+${clusters.length ? svg : '<p class="govuk-body" role="status">No governance domains are available yet. Check Purview service health or bootstrap the catalogue. Entries without a domain are listed below.</p>'}
 
 <p class="govuk-hint">
   Positions are arranged for legibility, not geography. Circle size reflects how
@@ -101,7 +122,7 @@ ${svg}
     <strong>${esc(cross.count)} cross-cluster dependencies</strong> are visible here, and a further
     <strong>${esc(cross.unresolved)}</strong> point at systems that are not registered at all.
     Cross-cluster dependency is the programme measure that matters most: the count
-    over time is the honest test of whether the department is joining up.
+    over time helps show whether teams are connecting their reusable assets.
   </p>
 </div>
 

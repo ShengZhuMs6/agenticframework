@@ -5,7 +5,6 @@ FROM mcr.microsoft.com/azurelinux/base/nodejs:20
 WORKDIR /app
 COPY package.json ./
 COPY src ./src
-COPY seed ./seed
 COPY scripts ./scripts
 # The bootstrap content, because the bootstrap JOB runs from this image
 # (infra/modules/containerapps.bicep): bootstrap.js reads bootstrap/*.json.

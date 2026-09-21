@@ -38,6 +38,9 @@ import { userFromRequest, authConfigured } from './services/identity.js';
 import * as reqs from './services/requests.js';
 import * as chatSvc from './services/chat.js';
 import * as auto from './services/automations.js';
+import * as redteam from './services/redteam.js';
+import { redTeamPage } from '../web/views/redteam.js';
+import { gatewayKeyMatches, invokeDemoSkill } from './services/demo-skills.js';
 import { chatPage, chatRefusedPage } from '../web/views/chat.js';
 import { automationsPage, automationFormPage, automationPage } from '../web/views/automate.js';
 import { explainError } from './services/explain.js';
@@ -56,7 +59,7 @@ import {
   composeInstructions
 } from './services/agents.js';
 import { gatesFor } from './services/assurance.js';
-import { publishAgent, openApiFor } from './services/publish.js';
+import { requestPublication, startPublicationScheduler, openApiFor } from './services/publish.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ASSET_DIR = path.resolve(__dirname, '../web/assets');
@@ -349,9 +352,19 @@ async function handle(req, res) {
    * is the only bespoke code in the publish path.
    */
   const shimMatch = pathname.match(/^\/shim\/agents\/([^/]+)\/invoke$/);
+  const skillMatch = pathname.match(/^\/shim\/skills\/([^/]+)\/invoke$/);
+  if (skillMatch && req.method === 'POST') {
+    if (!gatewayKeyMatches(req.headers['ocp-apim-subscription-key'], config.apim.subscriptionKey)) return json(res, 403, { error: 'Gateway subscription key required' });
+    let body;
+    try { body = JSON.parse(await readBody(req)); } catch { return json(res, 400, { error: 'Expected a JSON query' }); }
+    if (typeof body?.query !== 'string' || body.query.length > 2000) return json(res, 400, { error: 'query must be a string of at most 2,000 characters' });
+    const result = await invokeDemoSkill(skillMatch[1], body.query, index.storage, config.data.container);
+    return json(res, result ? 200 : 404, result || { error: 'No such demo skill' });
+  }
   if (shimMatch && req.method === 'POST') {
+    if (!gatewayKeyMatches(req.headers['ocp-apim-subscription-key'], config.apim.subscriptionKey)) return json(res, 403, { error: 'Gateway subscription key required' });
     const entry = index.get(shimMatch[1]);
-    if (!entry || entry.cat !== 'Agent') {
+    if (!entry || entry.cat !== 'Agent' || !entry._agent?.published) {
       return json(res, 404, { error: 'No such agent' });
     }
     let body = {};
@@ -365,6 +378,7 @@ async function handle(req, res) {
     try {
       const answer = await index.foundry.respond({
         agentName: entry._source?.id || entry.id,
+        agentVersion: entry._agent.publishedVersion,
         input: body.question,
         conversationId: body.conversationId
       });
@@ -510,7 +524,7 @@ async function handle(req, res) {
     const base =
       config.publicBaseUrl || `http://${req.headers.host || 'localhost:' + config.port}`;
     try {
-      const result = await publishAgent(entry.id, {
+      await requestPublication(entry.id, {
         baseUrl: base,
         // Pass through undefined when the form omits it, so publishAgent can
         // fall back to the visibility already in force. Defaulting here would
@@ -518,7 +532,7 @@ async function handle(req, res) {
         visibility: form.visibility || undefined,
         user: ctx.user
       });
-      return send(res, 200, publishResultPage(ctx, result));
+      return redirect(res, `/agent/${encodeURIComponent(entry.id)}/redteam`);
     } catch (err) {
       console.error('[publish]', err);
       return send(
@@ -528,7 +542,7 @@ async function handle(req, res) {
           code: 502,
           heading: 'Could not publish',
           message:
-            'API Management did not accept the registration. Nothing was changed, and you can try again.'
+            `Publication was not completed: ${err.message}`
         })
       );
     }
@@ -646,6 +660,27 @@ async function handle(req, res) {
   }
 
   /* ================================================== WP9 — build an agent */
+  const redTeamMatch = pathname.match(/^\/agent\/([^/]+)\/redteam(?:\/(prepare|rt-[a-f0-9-]+)(?:\/(start|refresh))?)?$/);
+  if (redTeamMatch) {
+    const [, agentId, id, action] = redTeamMatch;
+    const entry = index.get(agentId);
+    if (!entry) return send(res, 404, errorPage(ctx, notFound()));
+    if (!redteam.canRedTeam(entry, ctx.user)) return send(res, 403, errorPage(ctx, {
+      code: 403, heading: 'Red team access required',
+      message: 'The recorded agent builder or a member of the cortex-redteam group can assess an agent. For older agents, use the group.'
+    }));
+    if (req.method === 'POST') {
+      const form = parseForm(await readBody(req));
+      if ((id === 'prepare' || action === 'start') && form.confirmed !== 'yes') return send(res, 400, errorPage(ctx, { code: 400, heading: 'Confirmation required', message: 'Review and confirm the sandbox assessment before submitting.' }));
+      if (id === 'prepare') await redteam.prepare(entry, ctx.user);
+      else {
+        if (!redteam.runsFor(entry.id, ctx.user).some((r) => r.id === id)) return send(res, 404, errorPage(ctx, notFound()));
+        await redteam.act(id, ctx.user, action);
+      }
+      return redirect(res, `/agent/${encodeURIComponent(agentId)}/redteam`);
+    }
+    return send(res, 200, redTeamPage(ctx, { entry, runs: redteam.runsFor(entry.id, ctx.user) }));
+  }
 
   if (pathname === '/build') {
     const mine = index
@@ -749,6 +784,7 @@ async function handle(req, res) {
         cross: index.crossClusterLinks(),
         coverage: { ...index.coverage(), byCat },
         counts,
+        errors: index.sourceErrors,
         unclustered: all.filter((e) => !clusterIds.has(e.cluster))
       })
     );
@@ -922,7 +958,7 @@ async function handle(req, res) {
   /* ============================================ Automate — propose-only ==== */
 
   if (pathname === '/automate') {
-    return send(res, 200, automationsPage(ctx, { mine: auto.mine(ctx.user), all: auto.list(), created: url.searchParams.get('created') }));
+    return send(res, 200, automationsPage(ctx, { mine: auto.mine(ctx.user), all: auto.mine(ctx.user), created: url.searchParams.get('created') }));
   }
 
   const automationAgents = () =>
@@ -952,8 +988,9 @@ async function handle(req, res) {
     const [, id, action] = autoAction;
     const a = auto.get(id);
     if (!a) return send(res, 404, errorPage(ctx, notFound()));
+    if (!auto.owns(a, ctx.user)) return send(res, 403, errorPage(ctx, { code: 403, heading: 'Owner access required', message: 'Only the accountable owner can access this automation.' }));
     if (action === 'run') {
-      await auto.runNow(id);
+      await auto.runNow(id, { user: ctx.user });
       return redirect(res, `/automate/${id}?ran=1`);
     }
     if (action === 'pause') auto.setStatus(id, 'paused');
@@ -973,7 +1010,8 @@ async function handle(req, res) {
   if (autoDetail) {
     const a = auto.get(autoDetail[1]);
     if (!a) return send(res, 404, errorPage(ctx, notFound()));
-    const isOwner = a.owner?.email === ctx.user.email || a.owner?.id === ctx.user.id;
+    const isOwner = auto.owns(a, ctx.user);
+    if (!isOwner) return send(res, 403, errorPage(ctx, { code: 403, heading: 'Owner access required', message: 'Only the accountable owner can read these drafts.' }));
     return send(res, 200, automationPage(ctx, { automation: a, ran: url.searchParams.get('ran'), isOwner }));
   }
 
@@ -1087,6 +1125,7 @@ export async function start() {
   // first 401 and the turn retried — see foundry.js respond().
   index.foundry.repairTools = (name, opts) => ensureToolConnections(name, opts);
   auto.startScheduler();
+  const publicationTimer = startPublicationScheduler();
 
   const server = http.createServer((req, res) => {
     const started = Date.now();
@@ -1121,6 +1160,7 @@ export async function start() {
       });
   });
 
+  server.on('close', () => clearInterval(publicationTimer));
   server.listen(config.port, async () => {
     const s = index.stats();
     console.log(`Cortex listening on http://localhost:${config.port}`);

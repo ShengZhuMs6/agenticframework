@@ -82,7 +82,7 @@ class CortexIndex {
 
     if (config.index.warnIfEmpty && this.entries.size === 0) {
       console.warn('  register is EMPTY — nothing is registered in Purview, APIM or Foundry yet.');
-      console.warn('  Run `npm run bootstrap` to create the Defra governance domains and data products.');
+      console.warn('  Run `npm run bootstrap` to create the neutral synthetic demonstration catalogue.');
     }
 
     if (config.index.refreshMinutes > 0) {
@@ -134,11 +134,15 @@ class CortexIndex {
     }
 
     if (products) {
+      const ids = new Set(products.map((p) => p.id));
+      for (const [id, entry] of this.entries) if (entry._source?.system === 'purview' && !ids.has(id)) this.entries.delete(id);
       for (const p of products) this.upsert(this.normalise(p));
     }
 
     // Skills and apps registered as APIs in API Management.
     if (apis) {
+      const ids = new Set(apis.map((a) => a.id));
+      for (const [id, entry] of this.entries) if (entry._source?.system === 'apim' && !ids.has(id)) this.entries.delete(id);
       for (const a of apis) {
         if (!a?.id) continue;
         this.upsert(
