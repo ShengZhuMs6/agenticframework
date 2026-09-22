@@ -27,8 +27,10 @@ import config from '../config.js';
 import { attachableFor } from './visibility.js';
 import { collection } from '../state/store.js';
 import { explainError } from './explain.js';
+import { runtimeToolOptions } from './agents.js';
 
 const threads = () => collection('chats', {});
+const busy = new Set();
 
 let seq = 0;
 function newId() {
@@ -38,7 +40,7 @@ function newId() {
 
 function owns(thread, user) {
   if (!thread || !user) return false;
-  if (thread.userId && user.id && thread.userId === user.id) return true;
+  if (thread.userId) return Boolean(user.id && thread.userId === user.id);
   if (thread.userEmail && user.email && thread.userEmail.toLowerCase() === String(user.email).toLowerCase()) return true;
   return false;
 }
@@ -46,7 +48,7 @@ function owns(thread, user) {
 /** May this person chat with this agent? */
 export function canChat(entry, user) {
   if (!entry || entry.cat !== 'Agent') return { allowed: false, reason: 'Only agents can be chatted with.' };
-  if (!user) return { allowed: false, reason: 'Sign in first.' };
+  if (!user?.id) return { allowed: false, reason: 'Sign in first.' };
   if (config.chat.policy === 'visibility') {
     const a = attachableFor(entry, user);
     return a.attachable ? { allowed: true, reason: null } : { allowed: false, reason: a.reason || 'You cannot reach this agent.' };
@@ -67,6 +69,8 @@ export function threadsFor(agentId, user) {
 }
 
 export function startThread(entry, user) {
+  const permission = canChat(entry, user);
+  if (!permission.allowed) throw Object.assign(new Error(permission.reason), { code: 403 });
   const now = new Date().toISOString();
   const t = {
     id: newId(),
@@ -78,6 +82,7 @@ export function startThread(entry, user) {
     createdAt: now,
     updatedAt: now,
     lastResponseId: null,
+    agentVersion: entry._agent?.publishedVersion || null,
     turns: []
   };
   threads().data[t.id] = t;
@@ -105,9 +110,15 @@ export async function chat(entry, question, user, { threadId, foundry = index.fo
     throw err;
   }
   const q = String(question || '').trim();
+  if (!q || q.length > 8000) {
+    const err = new Error('Enter a message between 1 and 8,000 characters.');
+    err.code = 400;
+    throw err;
+  }
   let thread = threadId ? getThread(threadId, user) : null;
+  if (threadId && (!thread || thread.agentId !== entry.id)) throw Object.assign(new Error('This conversation is not available for this agent and user.'), { code: 404 });
   if (!thread) thread = startThread(entry, user);
-  if (!q) return { thread, turn: null };
+  if (busy.has(thread.id)) throw Object.assign(new Error('Wait for the current answer before sending another message.'), { code: 409 });
   if (thread.turns.length >= config.chat.maxTurns) {
     const err = new Error(`This conversation has reached ${config.chat.maxTurns} turns. Start a new one.`);
     err.code = 409;
@@ -116,12 +127,17 @@ export async function chat(entry, question, user, { threadId, foundry = index.fo
 
   const started = Date.now();
   const turn = { at: new Date().toISOString(), question: q, answer: null, error: null, ms: 0 };
+  busy.add(thread.id);
+  try {
   try {
     const answer = await foundry.respond({
+      ...runtimeToolOptions(entry),
       agentName: entry._source?.id || entry.id,
+      agentVersion: thread.agentVersion || undefined,
       input: q,
       previousResponseId: thread.lastResponseId || undefined
     });
+    if (!answer.text?.trim()) throw new Error('The agent returned no answer. Inspect the agent configuration and try again.');
     turn.answer = {
       text: answer.text || '',
       sources: answer.sources || [],
@@ -140,8 +156,10 @@ export async function chat(entry, question, user, { threadId, foundry = index.fo
   turn.ms = Date.now() - started;
   thread.turns.push(turn);
   thread.updatedAt = new Date().toISOString();
-  threads().save();
+  await threads().flush();
+  if (threads().lastError) throw Object.assign(new Error(`The answer could not be saved: ${threads().lastError}`), { code: 503 });
   return { thread, turn };
+  } finally { busy.delete(thread.id); }
 }
 
 /** Tests only. */

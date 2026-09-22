@@ -9,11 +9,11 @@ const sections = [
 
 function architecture() {
   return `<figure class="cx-exec-diagram">
-    <svg viewBox="0 0 1080 650" role="img" aria-labelledby="architecture-title architecture-desc" style="display:block;width:100%;height:auto" xmlns="http://www.w3.org/2000/svg">
+    <svg viewBox="0 0 1080 900" role="img" aria-labelledby="architecture-title architecture-desc" style="display:block;width:100%;height:auto" xmlns="http://www.w3.org/2000/svg">
       <title id="architecture-title">From a business question to a reusable, governed capability</title>
       <desc id="architecture-desc">People use one Data Cortex front door to discover, ask, build, test, publish and orchestrate. Purview provides trusted context, Foundry runs agents and assessments, and API Management connects reusable capabilities. Identity, human accountability and operational evidence surround the flow, on an Azure landing-zone foundation.</desc>
       <defs><marker id="cx-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0 0L10 5L0 10Z" fill="#54708d"/></marker></defs>
-      <rect x="16" y="16" width="1048" height="618" rx="20" fill="#f0f5fa" stroke="#c5d5e5"/>
+      <rect x="16" y="16" width="1048" height="868" rx="20" fill="#f0f5fa" stroke="#c5d5e5"/>
       <text x="540" y="49" text-anchor="middle" font-size="18" fill="#17324d">TRUST THROUGHOUT: identity · access · evidence · human accountability</text>
       <rect x="126" y="75" width="828" height="66" rx="12" fill="#17324d"/>
       <text x="540" y="104" text-anchor="middle" font-size="23" fill="white" font-weight="700">Your people. Their questions. Your organisational knowledge.</text>
@@ -31,12 +31,27 @@ function architecture() {
         <text x="${c.x + 158}" y="371" text-anchor="middle" font-size="16" fill="#44627e" font-weight="700">${c.name}</text>
         <text x="${c.x + 158}" y="405" text-anchor="middle" font-size="24" fill="#17324d" font-weight="700">${c.product}</text>
         ${c.lines.map((line, i) => `<text x="${c.x + 158}" y="${437 + i * 25}" text-anchor="middle" font-size="17" fill="#17324d">${line}</text>`).join('')}`).join('')}
-      <rect x="46" y="534" width="988" height="72" rx="12" fill="#dce9f4"/>
+      <rect x="46" y="534" width="988" height="322" rx="12" fill="#dce9f4"/>
       <text x="540" y="563" text-anchor="middle" font-size="21" fill="#17324d" font-weight="700">Azure landing-zone foundation</text>
-      <text x="540" y="590" text-anchor="middle" font-size="17" fill="#17324d">Entra identity · Container Apps · Storage + AI Search · Network and monitoring controls</text>
+      <text x="540" y="590" text-anchor="middle" font-size="16" fill="#17324d">A governed platform for repeatable AI adoption, not a collection of isolated demos</text>
+      ${[
+        ['Identity and access', 'Entra, workload identities, RBAC', 'Accountable owners and least privilege'],
+        ['Networking and connectivity', 'Perimeter, private endpoints, DNS', 'Controlled ingress and egress'],
+        ['Data and session services', 'Storage, Search, durable state', 'Retention, residency and recovery'],
+        ['Security and governance', 'Policy, secrets, classification', 'Threat protection and assurance'],
+        ['Operate and improve', 'Monitor, traces, evaluation evidence', 'SLOs, incident response and FinOps'],
+        ['Platform engineering', 'Subscriptions, IaC and release stages', 'Reusable deployments and rollback']
+      ].map(([name, line1, line2], i) => {
+        const x = 62 + (i % 3) * 326, y = 610 + Math.floor(i / 3) * 106;
+        return `<rect x="${x}" y="${y}" width="310" height="94" rx="8" fill="white" stroke="#b4cadf"/>
+          <text x="${x + 155}" y="${y + 25}" text-anchor="middle" font-size="17" font-weight="700" fill="#17324d">${name}</text>
+          <text x="${x + 155}" y="${y + 50}" text-anchor="middle" font-size="14" fill="#17324d">${line1}</text>
+          <text x="${x + 155}" y="${y + 73}" text-anchor="middle" font-size="13" fill="#44627e">${line2}</text>`;
+      }).join('')}
+      <text x="540" y="840" text-anchor="middle" font-size="13" fill="#44627e">Foundation cards describe the target design; service availability and controls depend on the deployed estate.</text>
     </svg>
-    <figcaption class="govuk-body-s">A connected user experience over Microsoft platform services, not a replacement for them.</figcaption>
-    <details class="govuk-details"><summary>Architecture text alternative</summary><p class="govuk-body">A business user enters through Data Cortex. Purview helps identify trusted data, owners and access routes. Foundry uses that context to run agents and evaluate their behaviour. API Management exposes reusable APIs and MCP capabilities. Entra establishes identity; humans own decisions. Container Apps, Storage, AI Search and network controls provide the foundation. Evidence from use and evaluation informs the next reviewed improvement.</p></details>
+    <figcaption class="govuk-body-s">A connected user experience over Microsoft platform services, not a replacement for them. Databricks, Fabric and Microsoft 365 connect through governed adapters; Teams and Copilot delivery use Azure Bot Service after assessment and tenant approval. Foundation cards are the target landing-zone design, not a claim that every control is deployed.</figcaption>
+    <details class="govuk-details"><summary>Architecture text alternative</summary><p class="govuk-body">A business user enters through Data Cortex. Purview identifies data, owners and access routes. Foundry runs agents and native assessments. API Management exposes APIs, GraphQL and MCP capabilities. Databricks, Fabric and Microsoft 365 are connected sources; Azure Bot Service delivers approved agents to Teams and Copilot. The target Azure landing zone combines identity and RBAC; private networking and controlled egress; storage, search and session retention; policy, secrets and threat protection; monitoring, evaluation and FinOps; subscription organisation, infrastructure as code and rollback. These are design areas to implement and validate in each customer estate, not a blanket certification of the sandbox.</p></details>
   </figure>`;
 }
 

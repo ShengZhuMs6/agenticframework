@@ -23,10 +23,10 @@ const ASSET_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), 'a
 export const GOVUK_VENDORED = existsSync(path.join(ASSET_ROOT, 'vendor', 'govuk-frontend.min.css'));
 
 export const NAV = [
-  ['/marketplace', 'Marketplace', 'marketplace'],
+  ['/cortex', 'Cortex', 'marketplace'],
   ['/ask', 'Ask a question', 'ask'],
   ['/build', 'Build an agent', 'build'],
-  ['/share', 'Share your data', 'share'],
+  ['/share', 'Share your artefact', 'share'],
   ['/requests', 'Requests', 'requests'],
   ['/automate', 'Automate a task', 'automate']
 ];
@@ -125,6 +125,7 @@ ${
     ? '<link rel="stylesheet" href="/assets/vendor/govuk-frontend.min.css">'
     : ''
 }<link rel="stylesheet" href="/assets/cortex.css">
+${ctx.compact ? '<script src="/assets/chat-window.js" defer></script>' : ''}
 </head>
 <body class="govuk-template__body cortex-theme-${theme.id}${GOVUK_VENDORED ? ' js-enabled govuk-frontend-supported' : ''}">
 <a href="#main-content" class="govuk-skip-link">Skip to main content</a>
@@ -134,7 +135,8 @@ ${
     <div class="govuk-header__logo">
       <a href="/" class="govuk-header__link--homepage">
         ${theme.id === 'defra' ? CROWN : ''}
-        <span>${theme.id === 'defra' ? 'GOV.UK' : esc(theme.name)}</span>
+        ${theme.id === 'microsoft' ? '<img class="cx-microsoft-logo" src="/assets/microsoft-logo.png" alt="Microsoft" width="108" height="23">' :
+          theme.id === 'novo' ? '<span class="cx-novo-logo" role="img" aria-label="Novo Nordisk">&#xe956;</span>' : '<span>GOV.UK</span>'}
       </a>
     </div>
     <div class="govuk-header__product">
@@ -145,8 +147,8 @@ ${
     ${
       ctx.compact
         ? ''
-        : `<form class="govuk-header__search" method="get" action="/marketplace" role="search">
-      <label class="govuk-skip-link" for="site-search">Search the marketplace</label>
+        : `<form class="govuk-header__search" method="get" action="/cortex" role="search">
+      <label class="govuk-skip-link" for="site-search">Search Cortex</label>
       <input id="site-search" type="search" name="q" placeholder="Search" value="${attr(ctx.query?.q || '')}">
       <button type="submit">Search</button>
     </form>`
@@ -206,6 +208,15 @@ ${identityBar(ctx)}
     </div>
   </div>
 </footer>
+${ctx.compact ? '' : `<dialog id="agent-chat-panel" class="cortex-chat-panel" aria-labelledby="chat-panel-title">
+  <div class="cortex-chat-panel__toolbar">
+    <h2 id="chat-panel-title" class="govuk-heading-s">Agent conversation</h2>
+    <button type="button" data-chat-expand aria-pressed="false">Expand</button>
+    <button type="button" data-chat-close aria-label="Close agent conversation">Close</button>
+  </div>
+  <p class="govuk-body-s" data-chat-status role="status" aria-live="polite"></p>
+  <div data-chat-content></div>
+</dialog><script type="module" src="/assets/chat-panel.js"></script><script type="module" src="/assets/demo-tips.js"></script>`}
 </body>
 </html>`;
 }

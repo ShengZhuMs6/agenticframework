@@ -16,6 +16,12 @@
 
 import { esc, attr, layout } from '../layout.js';
 
+const palette = ['#0067b8', '#007f73', '#6845a5', '#9a4f00', '#a42668', '#395b80'];
+export function domainColour(id) {
+  const hash = [...String(id)].reduce((sum, ch) => ((sum * 31) + ch.charCodeAt(0)) >>> 0, 0);
+  return palette[hash % palette.length];
+}
+
 export function layoutDomains(domains, counts) {
   const sorted = [...domains].sort((a, b) => String(a.name).localeCompare(String(b.name)) || a.id.localeCompare(b.id));
   const columns = Math.min(4, Math.max(1, sorted.length));
@@ -28,7 +34,8 @@ export function layoutDomains(domains, counts) {
       ...c,
       x: (i % columns) * 280 + 140,
       y: Math.floor(i / columns) * 240 + 120,
-      r: 55 + 35 * Math.sqrt((counts[c.id] || 0) / maximum)
+      r: 32 + 40 * Math.sqrt((counts[c.id] || 0) / maximum),
+      colour: domainColour(c.id)
     }))
   };
 }
@@ -38,7 +45,7 @@ export function mapPage(ctx, { clusters: domains, links, cross, coverage, counts
   const { clusters, width, height } = layoutDomains(domains, counts);
   const svg = `
 <svg viewBox="0 0 ${width} ${height}" width="${width}" height="${height}" role="img"
-     aria-labelledby="map-title map-desc" style="display:block;max-width:100%;height:auto;border:1px solid #b1b4b6;background:#fff">
+     aria-labelledby="map-title map-desc" class="cx-estate-map">
   <title id="map-title">Map of the data estate by governance domain</title>
   <desc id="map-desc">
     ${clusters.length} domains drawn as circles sized by how much each contains, with lines
@@ -62,16 +69,14 @@ export function mapPage(ctx, { clusters: domains, links, cross, coverage, counts
     .join('')}
   ${clusters
     .map(
-      (c) => `<a href="/marketplace?cluster=${attr(encodeURIComponent(c.id))}" aria-label="${attr(c.name)}: ${counts[c.id] || 0} registered entries"><g>
+      (c) => `<a href="/cortex?cluster=${attr(encodeURIComponent(c.id))}" aria-label="${attr(c.name)}: ${counts[c.id] || 0} registered entries"><g>
         <title>${esc(c.name)}</title>
-        <circle cx="${c.x}" cy="${c.y}" r="${c.r}" fill="#f3f2f1" stroke="#0b0c0c" stroke-width="2" />
-        <text x="${c.x}" y="${c.y - 8}" text-anchor="middle" font-size="15" font-weight="700" fill="#0b0c0c">${esc(
-          c.name.length > 20 ? c.name.slice(0, 19) + '…' : c.name
-        )}</text>
-        <text x="${c.x}" y="${c.y + 12}" text-anchor="middle" font-size="22" font-weight="700" fill="#505a5f">${esc(
+        <circle cx="${c.x}" cy="${c.y}" r="${c.r + 7}" fill="${c.colour}" opacity=".10"/>
+        <circle cx="${c.x}" cy="${c.y}" r="${c.r}" fill="${c.colour}" stroke="white" stroke-width="3" />
+        <text x="${c.x}" y="${c.y + 7}" text-anchor="middle" font-size="26" font-weight="700" fill="white">${esc(
           counts[c.id] || 0
         )}</text>
-        <text x="${c.x}" y="${c.y + 30}" text-anchor="middle" font-size="12" fill="#505a5f">registered</text>
+        <text x="${c.x}" y="${c.y + 94}" text-anchor="middle" font-size="15" font-weight="700" fill="#17324d">${esc(c.name.length > 30 ? c.name.slice(0, 29) + '…' : c.name)}</text>
       </g></a>`
     )
     .join('')}
@@ -88,7 +93,7 @@ export function mapPage(ctx, { clusters: domains, links, cross, coverage, counts
   </div>
   <div class="govuk-grid-column-one-third">
     <p class="govuk-body" style="text-align:right;margin-top:20px">
-      <a class="govuk-link" href="/marketplace">List</a> ·
+      <a class="govuk-link" href="/cortex">List</a> ·
       <strong>Map</strong>
     </p>
   </div>
@@ -110,11 +115,11 @@ export function mapPage(ctx, { clusters: domains, links, cross, coverage, counts
 </div>
 
 ${Object.keys(errors).length ? '<div class="govuk-inset-text" role="status">Some connected services could not refresh. This map may be incomplete or show previously loaded metadata. See <a class="govuk-link" href="/help">service health</a>.</div>' : ''}
-${clusters.length ? svg : '<p class="govuk-body" role="status">No governance domains are available yet. Check Purview service health or bootstrap the catalogue. Entries without a domain are listed below.</p>'}
+${clusters.length ? `<div class="cx-map-scroll" tabindex="0" role="region" aria-label="Governance domain map; scroll horizontally on smaller screens">${svg}</div>` : '<p class="govuk-body" role="status">No governance domains are available yet. Check Purview service health or bootstrap the catalogue. Entries without a domain are listed below.</p>'}
 
 <p class="govuk-hint">
   Positions are arranged for legibility, not geography. Circle size reflects how
-  much is registered in each domain.
+  much is registered in each domain. Colour distinguishes domains, not risk or compliance. Select a circle to browse its artefacts; open an artefact's lineage to trace its connections.
 </p>
 
 <div class="govuk-inset-text">
@@ -145,7 +150,7 @@ ${clusters.length ? svg : '<p class="govuk-body" role="status">No governance dom
         const name = (id) => clusters.find((x) => x.id === id)?.name || id;
         return `<tr class="govuk-table__row">
           <td class="govuk-table__cell">
-            <a class="govuk-link" href="/marketplace?cluster=${attr(c.id)}">${esc(c.name)}</a>
+            <a class="govuk-link" href="/cortex?cluster=${attr(c.id)}">${esc(c.name)}</a>
           </td>
           <td class="govuk-table__cell">
             ${esc(c.owner)}${c.owner === 'Not claimed' ? ' <strong class="govuk-tag govuk-tag--orange">Unclaimed</strong>' : ''}
@@ -193,7 +198,7 @@ ${
       .map(
         ([cat, n]) => `<tr class="govuk-table__row">
           <td class="govuk-table__cell">
-            <a class="govuk-link" href="/marketplace?cat=${attr(cat)}">${esc(cat)}</a>
+            <a class="govuk-link" href="/cortex?cat=${attr(cat)}">${esc(cat)}</a>
           </td>
           <td class="govuk-table__cell govuk-table__cell--numeric">${esc(n)}</td>
         </tr>`

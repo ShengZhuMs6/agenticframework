@@ -9,17 +9,25 @@ Browser (server-rendered HTML)
   -> Entra / Container Apps authentication
   -> Cortex backend-for-frontend
        -> metadata index: Purview + APIM + Foundry
-       -> agents, chat, requests, ordered agent workflows
+       -> unified Ask/Search entry, grounded platform guide
+       -> agents, in-page chat, requests, sequential/parallel workflows
        -> Foundry Evals/taxonomy red team integration
        -> blob state: one writer per app-specific container
   -> Purview Unified Catalog: domains, products, asset relationships
   -> Purview Data Map: scanned assets, schema, classifications
   -> APIM: REST APIs, MCP projections, gateway analytics
   -> Foundry: versioned agents, responses, project connections, evaluations
-  -> synthetic files -> Data Map scan -> AI Search -> agent grounding
+  -> synthetic files -> Data Map scan -> AI Search datasource/indexer/index
+       -> Search knowledge source/base -> Foundry managed-identity MCP connection
 ```
 
 The separate Purview MCP app exposes catalogue metadata, not arbitrary source rows. The publishing shim presents an agent invocation operation for APIM to expose as MCP. Neutral sample skills read bounded portions of uploaded synthetic files and require the gateway subscription key.
+
+The artefact publisher adds approved source connectors: Databricks serving endpoints, Fabric's published MCP runtime and Copilot Studio secured Direct Line or application-authenticated Direct Engine connections. Source protocol/availability preflight runs before creating gateway resources or assessments; successful connectivity does not establish model/data permission. Direct Engine HTTP/SSE requests have explicit time and size bounds, and disabled preview capabilities fail closed. A versioned Foundry wrapper delegates to an external source and remains subject to native pre-publication assessment. Generic JSON APIs are projected as APIM MCP tools; data products can expose a bounded GraphQL query over their existing Search indexes. Source credentials stay in managed identity or Container Apps secret references. Requests cannot change the administrator-approved origin or path prefix.
+
+After a passing assessment, Teams/Microsoft 365 publication pins the stable Foundry endpoint version, creates a dedicated Azure Bot Service and submits a tenant package through the documented publish API. The platform supplies authenticated Activity Protocol handling; a duplicate custom bot HTTP server and its separate session database are unnecessary. Catalogue submission is not tenant administrator approval, installation or entitlement.
+
+The simpler default prepares a Teams/Microsoft 365 custom-engine-agent ZIP without provisioning or submitting anything. It contains manifest metadata, correctly sized icons and explicit installation prerequisites. Native channel submission remains an advanced, separately consented option.
 
 ## Metadata and Map
 
@@ -35,11 +43,17 @@ Requests are drafted with holder permissions and require a human release. Chat f
 
 Assurance gates describe review requirements. **Test and publish** persists an assessment request, enables generated prohibited-action scenarios, runs native Foundry evaluation and publishes only when every sample passes all three distinct evaluators. A background worker resumes after restart. Published invocation pins the assessed agent version. Standalone reviewer-led scans remain available. Passing the configured sandbox gate is not a production safety certification.
 
+**Publish with acknowledgement** is the agreed advisory alternative: an authorized publisher explicitly accepts outstanding findings for the current version. The decision, evidence links and findings are stored without changing any failing or missing gate to passed. The automatic Responsible AI report maps configuration to Microsoft's six principles and NIST AI RMF; it does not replace representative behavioural evaluation or jurisdictional review. Accessibility evidence combines browser-reported axe results, an interface/agent fingerprint and a separate manual checklist.
+
+Automations use ordered stages, not an arbitrary cyclic graph: one to five steps total and at most three siblings per stage. Siblings execute concurrently, all settle, and any failure prevents the next stage. Combined output is bounded before handoff. The tool-free Foundry planning call can only return an editable proposal; approval is required before creating a schedule.
+
 ## Persistence and isolation
 
 Application state is JSON collections in Blob Storage with managed identity authentication. Local development can use files; missing/unreachable storage leaves explicit memory-only mode. The app never overwrites existing blob state after a failed initial read.
 
 One replica is supported per state container. The Microsoft/Novo-inspired variants share platform services and the neutral demo pack, but use distinct state containers. Shared identities and catalogues are not a tenant/customer isolation boundary.
+
+Chat now rejects cross-agent thread reuse, requires stable owner identity, serializes turns within a process and reports failed persistence. Published conversations pin the assessed version. This does not turn whole-collection blob persistence into a multi-writer database: keep the single-writer restriction. The existing Cosmos module is a future scale-out option, not a deployed session store. Native Bot/Foundry channels manage their own conversation state.
 
 Reset operates on reviewed object plans, not resource groups. Fingerprints detect changes between inventory and deletion. Unknown orphan ownership, platform audit history and soft-delete retention require separate operator review.
 

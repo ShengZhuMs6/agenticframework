@@ -43,15 +43,16 @@ class LiveFoundry {
     this.name = 'foundry:live';
   }
 
-  async _fetch(pathname, { method = 'GET', body, apiVersion = true, timeoutMs } = {}) {
+  async _fetch(pathname, { method = 'GET', body, apiVersion = true, timeoutMs, headers = {} } = {}) {
     const url = new URL(this.cfg.projectEndpoint + pathname);
-    if (apiVersion) url.searchParams.set('api-version', this.cfg.apiVersion);
+    if (apiVersion) url.searchParams.set('api-version', typeof apiVersion === 'string' ? apiVersion : this.cfg.apiVersion);
     const token = await getToken(this.cfg.scope);
     const res = await fetch(url, {
       method,
       headers: {
         Authorization: bearer(token),
-        'Content-Type': 'application/json'
+        'Content-Type': 'application/json',
+        ...headers
       },
       body: body ? JSON.stringify(body) : undefined,
       // fetch() has no default timeout. A model call is allowed longer than a
@@ -101,8 +102,8 @@ class LiveFoundry {
   /**
    * Make sure a named agent exists with this definition.
    *
-   * Agents are versioned by name, and every create of an existing name adds a
-   * version. So: read first, and reuse the agent when its model and
+   * Agents are versioned by name; existing agents use the /versions endpoint.
+   * Read first, and reuse the agent when its model and
    * instructions already match (or when the service does not show them —
    * churning a version on every restart is worse than a stale instruction).
    * Create only when it is absent or visibly different. To force a fresh
@@ -121,7 +122,7 @@ class LiveFoundry {
       if (same) return { agent: existing, created: false };
     }
     try {
-      const created = await this.createAgent({ name, model, instructions, tools });
+      const created = await this.createAgent({ name, model, instructions, tools, createVersion: Boolean(existing) });
       return { agent: created, created: true };
     } catch (err) {
       if (existing) return { agent: existing, created: false, warning: err.message };
@@ -135,11 +136,11 @@ class LiveFoundry {
    *   { type: 'mcp', server_label, server_url, require_approval,
    *     allowed_tools, project_connection_id }
    */
-  async createAgent({ name, model, instructions, tools = [], keepAllTools = false }) {
-    return this._fetch('/agents', {
+  async createAgent({ name, model, instructions, tools = [], keepAllTools = false, createVersion = false }) {
+    return this._fetch(createVersion ? `/agents/${encodeURIComponent(name)}/versions` : '/agents', {
       method: 'POST',
       body: {
-        name,
+        ...(createVersion ? {} : { name }),
         definition: {
           kind: 'prompt',
           model: model || this.cfg.model,
@@ -155,7 +156,9 @@ class LiveFoundry {
 
   async getAgent(name) {
     try {
-      return await this._fetch(`/agents/${encodeURIComponent(name)}`);
+      const agent = await this._fetch(`/agents/${encodeURIComponent(name)}`);
+      const latest = agent?.versions?.latest || agent?.versions?.[0];
+      return latest ? { ...agent, ...latest } : agent;
     } catch (err) {
       if (/ failed 404:/.test(err.message)) return null;
       throw err;
@@ -172,15 +175,27 @@ class LiveFoundry {
     return this._fetch('/openai/v1/conversations', { method: 'POST', body: {}, apiVersion: false });
   }
 
+  /** A tool-free model call for guidance and proposals; it cannot execute a plan. */
+  async complete({ instructions, input }) {
+    const response = await this._post({
+      model: this.cfg.model, instructions, input, tools: [], store: false
+    });
+    const answer = this._toAnswer(response);
+    if (answer.status && answer.status !== 'completed') throw new Error(`Foundry response is ${answer.status}.`);
+    if (!answer.text?.trim()) throw new Error('Foundry returned no answer.');
+    return answer;
+  }
+
   /**
    * One turn. Continuity comes from `previous_response_id` — the service keeps
    * the history server-side, so a follow-up carries the whole thread without
    * this app storing any of it.
    */
-  async respond({ agentName, agentVersion, input, conversationId, previousResponseId, maxApprovalRounds = this.cfg.maxApprovalRounds ?? 6 }) {
+  async respond({ agentName, agentVersion, input, conversationId, previousResponseId, requireToolUse = false, maxApprovalRounds = this.cfg.maxApprovalRounds ?? 6 }) {
     const agentRef = { name: agentName, type: 'agent_reference' };
     if (agentVersion) agentRef.version = String(agentVersion);
     const body = { input, agent_reference: agentRef };
+    if (requireToolUse) body.tool_choice = 'required';
     if (conversationId) body.conversation = conversationId;
     if (previousResponseId) body.previous_response_id = previousResponseId;
 
@@ -230,6 +245,11 @@ class LiveFoundry {
         previous_response_id: res.id,
         input: approvals.map((a) => ({ type: 'mcp_approval_response', approval_request_id: a.id, approve: true }))
       });
+    }
+    if (requireToolUse) {
+      const calls = toolCalls.filter((call) => call.kind === 'call');
+      if (!calls.length) throw new Error('The connected source agent was not invoked. No delegated answer is available.');
+      if (calls.some((call) => call.error)) throw new Error('The connected source agent call failed. Review the connector availability and permissions.');
     }
     return this._toAnswer(res, { toolCalls, approvalRounds: rounds });
   }

@@ -33,22 +33,28 @@ import { resolveDefinition } from './agents.js';
 import { connectionsConfigured, ensureMcpConnection } from '../adapters/foundry-connections.js';
 import { prepare, act, canRedTeam, allAssessments, assessmentById, saveAssessments, publicationVerdict, agentVersion } from './redteam.js';
 import { collection } from '../state/store.js';
+import { evidenceGates } from './evidence.js';
+import { gatesForDefinition } from './agents.js';
+import { publishChannels } from '../adapters/channels.js';
 
 const publishing = new Set();
 
-export async function requestPublication(entryId, { baseUrl, visibility, user }) {
+export async function requestPublication(entryId, { baseUrl, visibility, user, microsoft365, acknowledge = false }) {
   const entry = index.get(entryId);
   if (!canRedTeam(entry, user)) throw new Error('Only the recorded builder or a red-team reviewer may publish this agent.');
   if (publishing.has(entryId)) throw new Error('A publication request for this agent is already being prepared.');
   publishing.add(entryId);
   try {
+    if (acknowledge) return await publishAgent(entryId, { baseUrl, visibility, user, acknowledge: true });
     const existing = allAssessments().find((r) => r.agentId === entryId && r.publication && !['published','blocked'].includes(r.publication.status));
     if (existing) {
       if (existing.ownerId !== user.id) throw new Error('An assessment is already running for another publisher.');
+      if (JSON.stringify(existing.publication.microsoft365 || null) !== JSON.stringify(microsoft365 || null)) throw new Error('An assessment with different channel options is already running. Wait for it to finish before requesting another publication.');
       return existing;
     }
     const r = await prepare(entry, user);
     r.publication = { baseUrl, visibility, user: { id: user.id, name: user.name, groups: user.groups || [] }, status: r.status === 'failed' ? 'blocked' : 'assessing', requestedAt: new Date().toISOString() };
+    if (microsoft365) r.publication.microsoft365 = microsoft365;
     r.policy = 'Automatic pre-publication sandbox policy: enable every generated prohibited-action scenario; all three evaluators must pass every sample; zero errors.';
     await saveAssessments();
     return r;
@@ -73,6 +79,14 @@ export async function advancePublications() {
           const verdict = publicationVerdict(r);
           if (!verdict.passed) throw new Error(verdict.reason);
           await publishAgent(r.agentId, { ...r.publication, assessmentId: r.id });
+          if (r.publication.microsoft365) {
+            if (['submitting', 'submitted-for-approval'].includes(r.publication.channel?.state)) throw new Error('A Microsoft 365 submission already exists or has an uncertain outcome. Review it before another submission.');
+            const entry = index.get(r.agentId);
+            await publishChannels(index.foundry, entry._source?.id || entry.id, r.target.version, r.publication.microsoft365, async (progress) => {
+              r.publication.channel = { ...r.publication.channel, ...progress };
+              await saveAssessments();
+            });
+          }
           r.publication.status = 'published';
         }
       } catch (err) {
@@ -179,14 +193,20 @@ export function openApiFor(entry, baseUrl) {
  * Publish. Returns the MCP endpoint and a step-by-step record of what
  * happened, which the UI shows — the steps ARE the demo.
  */
-export async function publishAgent(entryId, { baseUrl, visibility, user, assessmentId }) {
+export async function publishAgent(entryId, { baseUrl, visibility, user, assessmentId, acknowledge = false }) {
   const entry = index.get(entryId);
   if (!entry) throw new Error(`Unknown agent ${entryId}`);
   if (!canRedTeam(entry, user)) throw new Error('Only the recorded builder or a red-team reviewer may publish this agent.');
   const assessment = assessmentById(assessmentId);
-  if (!assessment || assessment.agentId !== entryId || assessment.ownerId !== user.id || !publicationVerdict(assessment).passed) throw new Error('Publication requires a successful native Foundry red-team assessment.');
+  const passing = assessment && assessment.agentId === entryId && assessment.ownerId === user.id && publicationVerdict(assessment).passed;
+  if (!passing && !acknowledge) throw new Error('Publication requires a successful native Foundry red-team assessment or explicit acknowledgement of outstanding findings.');
   const live = await index.foundry.getAgent(entry._source?.id || entry.id);
-  if (String(agentVersion(live)) !== assessment.target.version || assessment.target.name !== (entry._source?.id || entry.id)) throw new Error('The agent changed after its assessment. Run a new assessment before publishing.');
+  const version = String(agentVersion(live) || '');
+  if (!version || (passing && (version !== assessment.target.version || assessment.target.name !== (entry._source?.id || entry.id))) ||
+      (!passing && version !== String(entry._agent?.version))) throw new Error('The agent changed after its assessment or recorded definition. Refresh or rebuild before publishing.');
+  const acknowledgedFindings = acknowledge ? evidenceGates(entry, await gatesForDefinition(entry._agent?.definition || {}))
+    .filter((gate) => !['complete', 'notRequired', 'notApplicable'].includes(gate.statusKey))
+    .map(({ id, label, reason, evidence }) => ({ id, label, reason, evidence })) : [];
 
   /**
    * Republishing must never silently narrow who can reach an agent. If no
@@ -293,12 +313,13 @@ export async function publishAgent(entryId, { baseUrl, visibility, user, assessm
     flags: (entry.flags || []).filter((f) => f !== 'new'),
     _endpoints: { ...entry._endpoints, mcp: mcpUrl, openapi: openApiUrl },
     _agent: {
-      ...entry._agent,
+      ...index.get(entryId)._agent,
       published: true,
       publishedAt: new Date().toISOString(),
       publishedBy: user?.name,
-      publishedVersion: assessment.target.version,
-      assessmentId: assessment.id,
+      publishedVersion: version,
+      assessmentId: passing ? assessment.id : null,
+      assuranceAcknowledgement: acknowledge ? { by: user.id, at: new Date().toISOString(), version, findings: acknowledgedFindings } : null,
       visibility: effectiveVisibility,
       apimApiId: apiId,
       apimMcpId: mcpId,

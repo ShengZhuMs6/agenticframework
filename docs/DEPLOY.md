@@ -1,8 +1,42 @@
 # Data Cortex - deploy, verify and iterate
 
+## Current release: Novo demo refresh for 23 September 2026
+
+All three apps use `prdcoreamlacr001.azurecr.io/cortex/web-cortex:novo-demo-20260923-r3`, with maintenance mode off. The full original Novo About source is unchanged (SHA-256 `43f42a42f2599de9cacb0ed8590bdeccd934e28bc0a024c5ef6f79e4b924a354`), with shared functionality and distinct Microsoft/Novo/Defra styling.
+
+The approved reset backed up 331 selected objects in the private container `stcortexstatezha7pf/backup-cortex-20260922122439`. Foundry returned `deleted:false` for evaluation deletion; the user then approved retaining exactly 9 evaluations and 9 taxonomies. The amended plan confirmed deletion of the remaining **313 objects**. Unrelated resources, `nyctaxi-v2`, external source systems, identities, permissions, backups and empty ADLS directory markers/ACLs were preserved.
+
+Catalogue deletion required the operator's existing Purview permissions, not new grants to the app identity. Data-product/data-asset relationships had to be detached before either endpoint could be deleted. Storage/index cleanup used the existing workload identity, with bounded backoff for Search throttling. Do not interpret HTTP 200 with `deleted:false` as deletion.
+
+The rebuild produced 9 demo domains, 14 products, 14 linked CSV assets, 14 indexes and 14 Foundry IQ bases/connections. CSV uploads were byte-verified and index counts matched exactly: **15,050 rows**. The data is private; an unauthenticated container URL is not a file browser. The Data Map scan succeeded with 14 CSV assets classified. Two unrelated pre-existing domains remain, so total domain counts can exceed the nine demo domains.
+
+The recorded sequence was catalogue creation with `--only=purview --skip-roles`, workload-identity file upload/scan, `--only=link --skip-roles`, `--only=search --skip-roles`, and `--only=knowledge --skip-roles`. Run storage operations from an already-authorised network/workload; do not open the firewall to make a laptop command work.
+
+`scripts/bootstrap-demo.js --apply --user-id=<presenter-object-id>` requires maintenance mode and verified grounding. It seeds five analysts/reviewers, the operations GraphQL API, a draft Databricks wrapper and a manual five-step workflow, then merges only those seed records into the other app-state containers. It does not start native red-team scans or scheduled workflow runs. `cortex-demo-graphql` points to the seeded API; its authentication references the existing APIM key without embedding it in a form.
+
+Live Novo rehearsal covered Ask, real SYN-17 data retrieval, agent creation, Foundry IQ publication, REST and GraphQL MCP discovery/invocation, actual Databricks delegation, package generation, Requests, AI workflow proposals and the five-step workflow. The first three workflow steps started in parallel; all five completed successfully in approximately 37 and 53 seconds. Source evidence is carried into later stages, and run results are flushed before returning success.
+
+The request example's supported-holder questions are part of the catalogue metadata (`cortexAskable`); without that metadata, a request can be recorded as unassigned. Required example fields are prefilled, while consent remains unchecked. Native red teaming, Fabric/Studio enablement and tenant installation are explicitly not represented as completed demo capabilities.
+
+## Earlier Microsoft-only redesign: 22 September 2026
+
+This iteration targets **cortex-web-microsoft only**. The original and Novo apps retain their prior images. The deployed integration source from the earlier session was imported without changing that session's worktree; preserve `CORTEX_CONNECTORS`, existing secret references, Entra callbacks and `state-cortex-web-microsoft`.
+
+Final image: `prdcoreamlacr001.azurecr.io/cortex/web-cortex:redesign-20260922-r3`; ready revision: `cortex-web-microsoft--0000012` (Healthy). Previous integration image `integrations-20260921-r5` remains available for an explicitly reviewed rollback.
+
+The redesign adds unified Ask/Search entry, in-page chat, progressive parallel workflows and AI proposals, a grounded guide, slim publishing, Responsible AI/accessibility evidence and a compact technology architecture. See [the demo plan](DEMO.md) for the synthetic blueprints and exact live results.
+
+Foundry IQ has two explicit configurations. With no planning-model settings, it uses the documented stable minimal MCP contract; the current sandbox rejected that MCP API version. The verified sandbox path uses `SEARCH_KNOWLEDGE_MODEL_NAME=gpt-5.4-mini` and `SEARCH_KNOWLEDGE_MODEL_ENDPOINT=https://prdcorefdryeus001.openai.azure.com`, the existing `FOUNDRY_MODEL` deployment, preview MCP and low-effort planning. The Search identity has the approved Cognitive Services OpenAI User role on that account, and the Foundry project identity has Search Index Data Reader. Semantic ranking is **free**, and the Search SKU remains Basic.
+
+API Usage Demo Agent version 2 replaces only its failing native Search tool with the working Foundry IQ connection over the same index. Its other tools and instructions were preserved. The native Search access-denied cause was not conclusively established; diagnostic resources and ineffective added agent grants were removed. Rebuilds must use `POST /agents/{name}/versions`, not a second `POST /agents`.
+
+Native red-team run `rt-9773c801-7537-4843-8f43-49d2af904099` is persisted as blocked by the Foundry hosted ACA-session 429, with zero evaluated samples. No automatic resubmission or paid capacity upgrade was performed. A real Teams/Microsoft 365 ZIP was generated; tenant installation remains an administrator step. Browser automation is not a substitute for the recorded manual WCAG checklist.
+
+For long operator commands through Container Apps exec, keep the command short (for example, compressed in-memory payloads). Long websocket command URLs produced 404 responses in this environment; a separate 429 response supplied a 600-second retry delay, which was respected.
+
 Use PowerShell 7 on Windows. Follow sections 1-5 for a first deployment; use section 6 for subsequent changes. Sections 7-9 cover assessments, variants and destructive content reset.
 
-**Current sandbox status (21 September 2026):** the user approved direct deployment of `cortex-web-microsoft` and `cortex-web-novo` in `cae-cortex`, and removal of unreferenced legacy demo Search indexes. Both apps are deployed with independent blob state. The original web app image is unchanged. The protected Foundry connection, sample scan and all fourteen product attachments are repaired; all fourteen neutral Search indexes contain rows. Native red-team submissions reached Foundry but its hosted runtime returned an ACA-session 429 on two attempts. Publication therefore remains blocked when that service error occurs. No full content reset or paid capacity upgrade was performed.
+**Current sandbox status (21 September 2026):** the follow-up authorizes updates to all three web apps, necessary Azure infrastructure, dedicated channel-app submission (not tenant-wide installation), and synthetic-only source discovery. All three now receive the integration release. Original content and separate state containers are preserved. The repaired catalogue has fourteen linked sample products and fourteen populated indexes. Agent publication still fails closed on Foundry's hosted ACA-session 429. The GraphQL and API-to-MCP paths have been exercised through APIM; not every cross-platform agent path is end-to-end operational. See section 11 for the exact remaining blockers. No full reset, new paid capacity or Microsoft 365 licence purchase was performed.
 
 ## 1. Understand the deployment
 
@@ -217,7 +251,7 @@ Review, then run without `-WhatIf` and answer the confirmation. Use `-Only micro
 
 The script requires a direct-config source with working Entra auth, a user-assigned identity and blob state. It copies configuration/secrets without printing values, creates `state-<app-name>` containers, and adds each callback URL to the source Entra registration **without removing existing redirects**. Initial ingress stays internal until authentication is configured. It refuses an unrelated existing target app.
 
-The source app and its azd settings are unchanged. The Entra registration receives additional redirect URLs; the identity, APIM, Purview and Foundry backends remain shared. This is presentation/state isolation, **not customer data isolation**. Use separate platform resources and identities for real customer boundaries.
+The variants script never updates the source app. For this follow-up, the user separately approved deploying the new source image to `cortex-web` too. The Entra registration receives additional redirect URLs; the identity, APIM, Purview and Foundry backends remain shared. This is presentation/state isolation, **not customer data isolation**. Use separate platform resources and identities for real customer boundaries.
 
 The script uses control-plane storage container creation, so a laptop need not cross the storage perimeter. It reads and writes one pinned ARM schema to avoid copying newer, unsupported CLI properties. Each target needs runtime storage access through the reused identity.
 
@@ -285,3 +319,98 @@ After completing all plan items and resolving warnings, re-run bootstrap section
 Key settings: `FOUNDRY_PROJECT_ENDPOINT`, `FOUNDRY_MODEL`, Foundry ARM names; `PURVIEW_ENDPOINT`, `PURVIEW_ACCOUNT_NAME`; APIM subscription/group/service/key; `SEARCH_ENDPOINT`; `DATA_STORAGE_ACCOUNT`, `DATA_CONTAINER`; `STATE_STORAGE_ACCOUNT`, `STATE_CONTAINER`; `PUBLIC_BASE_URL`; `CORTEX_THEME`; `CORTEX_GROUP_NAMES`; `CORTEX_CHAT_POLICY`; `CORTEX_AUTOMATIONS`.
 
 Keep one replica per state container. Keep infrastructure settings in the deployment parameters, not just one-off portal edits. Read [HANDOVER.md](HANDOVER.md) for implementation boundaries and [ARCHITECTURE.md](ARCHITECTURE.md) for the data flow.
+
+## 11. Share your artefact and cross-platform integrations
+
+### Publishing paths and metadata
+
+Open **Share your artefact** and choose a publication type. Every path requires a name, description, purpose, accountable owner, contact, governance domain, semantic version, classification, licence, limitations and explicit source-authority confirmation. Optional registered dependencies feed the lineage view. Credentials are referenced by administrator-configured connectors, never submitted in the publishing form.
+
+| Path | Implementation and boundary |
+|---|---|
+| Databricks/Fabric/Microsoft 365 source agent | A Foundry wrapper calls the source through an authenticated APIM tool. The wrapper is natively assessed before marketplace publication. The original agent remains in its platform. Remote source configuration is not made immutable by a wrapper version; source changes require reassessment. |
+| Data product to GraphQL | Read-only GraphQL over the product's existing Search index. `rows(search, first)` returns `id` and JSON-encoded row content. Maximum 50 rows per resolver, 40 query fields and 8,000 query characters. This is not arbitrary database federation. |
+| API to MCP | Import selected OpenAPI 3.0 JSON operations, then create a real APIM MCP projection. GET is the default. Other supported JSON methods require explicit confirmation. External `$ref` and `servers` are rejected; the connector fixes the destination and credentials. |
+| Non-Copilot agent to Teams/Microsoft 365 | Assess a Foundry agent/wrapper, pin its endpoint version, provision a dedicated Azure Bot Service, and submit through `POST /agents/{name}/microsoft365/publish?api-version=v1`. This presents a custom-engine agent; it does not convert its implementation into a Copilot Studio agent. Tenant submission remains subject to administrator approval and licensing. |
+
+Use synthetic data and read-only agents. A registered API's permitted write operations can change its source when called; enabling them is not a general-purpose sandbox. Gateway subscription keys and source permissions remain required.
+
+### Configure source identities once
+
+```powershell
+.\scripts\Set-CortexIntegrations.ps1 `
+  -ResourceGroup PRDCORECORTEX001 `
+  -DatabricksHost adb-7405608443657059.19.azuredatabricks.net `
+  -FabricCapacityId 11bb386e-6eba-41c5-9377-d5e7d7d7846c -WhatIf
+```
+
+After approval, run without `-WhatIf`. This script onboards the existing app identity into Databricks, creates/reuses a dedicated Fabric service principal and synthetic workspace, stores its secret in Container Apps, configures the three apps and grants the narrow Bot Service Contributor role in the Foundry resource group. It does not enable tenant AI settings automatically or add a Microsoft 365 source credential.
+
+`CORTEX_CONNECTORS` is a JSON array of administrator-approved metadata. Source-specific fields:
+
+- Databricks: `id`, `provider: "databricks"`, `baseUrl`, `scope: "2ff814a6-3304-4ab8-85cb-cd0e6f879c1d/.default"`. The source ID is a serving endpoint name.
+- Fabric: `provider: "fabric"`, `baseUrl: "https://api.fabric.microsoft.com"`, Fabric `.default` scope, `workspaceId`, `clientId`, `tenantId`, `secretEnv: "CORTEX_FABRIC_SECRET"`. The source ID is `workspace-id/data-agent-id`. Use a service principal, not managed identity; runtime uses the published MCP endpoint, not the retired Assistants API.
+- Copilot Studio/Microsoft 365 source: either a secured Direct Line connector (`baseUrl: "https://directline.botframework.com"`, `auth: "bearer-secret"`, `secretEnv`, matching `agentId`) or application-authenticated Direct Engine (`protocol: "direct-engine"`, environment API `baseUrl`, `scope: "https://api.powerplatform.com/.default"`, `clientId`, `tenantId`, `secretEnv`, and the published schema as `agentId`). Direct Engine requires the environment's app-only S2S preview to be enabled. No existing agent or channel is reconfigured automatically.
+- Generic API: `provider: "openapi"`, approved `baseUrl`, and either `auth: "anonymous"`, configured OAuth `scope`, or `auth: "header"` with `header` and `secretEnv`. Service-principal OAuth also accepts `clientId`/`tenantId`.
+
+The Bicep parameters `connectorConfiguration` and secure `fabricConnectorSecret`/`studioConnectorSecret` keep configuration reproducible. Before full infrastructure reprovisioning, load the current app settings or explicitly supply those values; empty defaults intentionally disable connectors. App-only image deployment preserves them. The base connector setup preserves separately configured Studio connectors. Never commit credentials or persist them in a PR body.
+
+### Scoped Fabric AI policy
+
+The operator explicitly approved a dedicated connector security group, not tenant-wide AI enablement. The initial OpenAI-subprocessor toggle was insufficient: Fabric uses the distinct `EnableAOAI` Azure OpenAI policy. The approved correction adds the connector group while preserving the existing administrator group, and reverts the unused subprocessor toggle:
+
+```powershell
+.\scripts\Enable-CortexFabricAI.ps1 -ApplicationId 0dc99e98-cb18-4427-a1ca-d2c241b51ec8 -WhatIf
+```
+
+Cross-region processing remains opt-in. During the resumed session the operator explicitly approved adding only the dedicated connector group to the existing `AllowSendAOAIDataToOtherRegions` policy, because Fabric documents this prerequisite:
+
+```powershell
+.\scripts\Enable-CortexFabricAI.ps1 -ApplicationId 0dc99e98-cb18-4427-a1ca-d2c241b51ec8 `
+  -AllowCrossRegionProcessing -WhatIf
+```
+
+The approved change was applied while preserving the existing administrator group. Synthetic prompts/responses can therefore be processed outside the capacity's region for this connector. No other group was added and the OpenAI-subprocessor policy remains disabled. The last model invocation still returned 403 even after this change; protocol handshake success is not proof of model permission. Do not enable AI tenant-wide as a workaround.
+
+`node .\scripts\provision-fabric-demo.js` previews a synthetic, instruction-only catalogue guide. `--apply` creates/publishes it through public Fabric APIs and invokes its MCP endpoint. It attaches no business data. `--operator` uses the already-authorized Azure CLI operator for management, while the runtime probe still uses the configured connector identity. That path created and published agent `7e478267-9ccf-4468-b05d-ec4ba9382c8b` in the dedicated workspace. An operator-authenticated MCP query returned its accurate synthetic catalogue explanation; the app's service-principal query still fails with HTTP 403, `OpenAI usage disallowed: Disallowed`. The source exists, but its unattended app integration is not yet operational.
+
+### Live acceptance and current limits
+
+The privileged runner executes **inside the app container**, so requests use the existing trusted ingress-header contract without exposing a public authentication bypass. Supply the approving operator object ID:
+
+```powershell
+az containerapp exec -g PRDCORECORTEX001 -n cortex-web-microsoft `
+  --command "node scripts/test-live-publishing.js --graphql --user-id=<operator-object-id>"
+```
+
+Use `--apply` only to create the clearly named synthetic acceptance artefact. Omit `--graphql` for API-to-MCP, or use `--agent` for Databricks wrapper onboarding. These operations can incur Azure usage. APIM gateway propagation can lag successful control-plane creation; rerun the read-only acceptance command rather than creating another artefact.
+
+Confirmed: ordinary Foundry chat preserved a synthetic word across two turns; dedicated Fabric credentials can access the new workspace; the synthetic Fabric agent answered through MCP with operator authentication; a synthetic Databricks request succeeded; GraphQL returned real indexed synthetic rows through APIM; the published MCP health tool was listed and invoked. A live wrapper test exposed APIM's single-argument raw-body mapping, now normalized only on the gateway-protected agent shim. After repair, popup chat returned SYNTHETIC through Foundry, APIM and the Databricks source.
+
+Remaining blockers: native Foundry red-team runtime still returns ACA-session 429 on a fresh deployed-app retry; Fabric rejects the connector service principal's model invocation with 403 although operator access works; Copilot Studio rejects the dedicated app with HTTP 405 and the explicit message `App-only S2S access is not enabled for this environment`; and outgoing tenant channel publication still awaits a passing native assessment. These are not successful live publishing paths.
+
+### Synthetic Copilot Studio source and authenticated connector
+
+The reusable source is in `bootstrap\copilot-studio`. It was scaffolded and published with Microsoft Power Platform CLI 2.12.2 in the existing Dataverse environment. Agent schema: `cortex_SyntheticCatalogueGuide`; agent ID: `a6517ae7-32ad-4d5f-8c9a-6580a86d3b13`. It has no business data or external tools; web browsing and file analysis are disabled. Generated `.mcs` deployment metadata is excluded from Git and Docker.
+
+Use PAC with an explicitly authenticated profile for the reviewed environment. The script preserves that profile rather than changing the user's global sign-in:
+
+```powershell
+.\scripts\Deploy-CortexStudio.ps1 `
+  -EnvironmentUrl https://orge2c8e454.crm.dynamics.com -WhatIf
+
+.\scripts\Set-CortexStudioConnector.ps1 -ResourceGroup PRDCORECORTEX001 `
+  -EnvironmentId Default-f92adce5-4bb9-4361-a380-9deaeee24c67 -WhatIf
+```
+
+The operator separately approved the dedicated application's `CopilotStudio.Copilots.Invoke` application permission. App `5fa30651-a803-452f-888b-be77641f8880` is configured in all three apps; its secret is stored as a Container Apps secret, not in the source pack. No tenant-wide installation was performed.
+
+The supported Direct Engine protocol uses bounded authenticated HTTP/SSE requests, rejects incomplete streams and interactive OAuth-card responses, and does not retry conversation POSTs. A known disabled-S2S response fails preflight before any new APIM resource or Foundry assessment is created. The source retains integrated user authentication: the proposed app-only sign-in change was not applied because a disabled environment feature cannot be fixed by making the agent anonymous.
+
+Microsoft's [client documentation](https://github.com/microsoft/Agents-for-js/tree/main/packages/agents-copilotstudio-client) describes app-only access as a preview requiring environment enablement. The deployed environment must be enabled by the service owner/Microsoft before this unattended connection can work. Existing reset tooling does not delete Fabric/Studio source solutions or their Entra registrations; source-platform teardown needs a separately reviewed operation.
+
+### Branding and presentation
+
+Header marks were taken from the official homepages on 21 September 2026, not redrawn: Microsoft's `https://uhf.microsoft.com/images/microsoft/RE1Mu3b.png`, and Novo Nordisk's current `icon-logo-white-v2` glyph from its `clientlib-site/resources/fonts/icomoon.woff` asset. Local copies avoid third-party requests from the demo pages. Preserve company trademark rights and do not imply endorsement; obtain brand approval before external marketing use.
+
+The About diagram expands the target landing zone into identity, networking, data/session services, security/governance, operations/FinOps and platform engineering. Its labels distinguish target design from deployed controls. Lineage shows declared registered relationships, not inferred runtime tracing.

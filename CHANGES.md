@@ -1,5 +1,39 @@
 # Data Cortex - change report
 
+## Novo operational demo refresh
+
+- Restored the original full Novo About source exactly and aligned all three apps on one release with improved brand-specific visuals.
+- Added guarded maintenance mode, multi-container reset selection, ownership checks, relationship cleanup and truthful handling of provider `deleted:false` responses.
+- Backed up the reviewed inventory, removed 313 approved objects and retained 18 provider-history objects by explicit user approval.
+- Rebuilt and verified 14 datasets/asset links/indexes/knowledge bases, with exactly 15,050 synthetic rows.
+- Added five data-backed analyst/reviewer blueprints, manual-only demo workflows, and resolved publishing defaults for every supported category.
+- Added one-click Try examples without automatic submission, preserved request details across holder selection, and populated holder-supported catalogue questions.
+- Enforced actual delegation for external wrappers, preserved their tools on rebuild, propagated workflow citations and awaited durable result persistence.
+- Rehearsed the real Novo application paths, including all five workflow steps and both REST/GraphQL MCP tools. Tenant installation and unavailable native assessment capacity remain explicit prerequisites.
+
+## Cortex experience redesign
+
+- Preserved the newer deployed integration source, connectors, artefact overlays and conversation protections.
+- Renamed the catalogue to Cortex; added one Ask/Search landing input with an explicit override, a grounded platform guide and a compact Microsoft architecture story.
+- Added an accessible bottom-right chat dialog, fixed version creation through Foundry's `/versions` route and guarded rebuilds by builder/reviewer access.
+- Added automatic Microsoft Responsible AI/NIST mappings, current-version red-team gate evidence, advisory publication acknowledgement, axe-core browser audits and a separate manual WCAG 2.2 AA checklist.
+- Simplified publishing metadata; added configured-source Foundry IQ onboarding, fixed GraphQL queries as MCP tools, and downloadable Teams/Microsoft 365 packages without implicit tenant installation.
+- Added one-to-five-step workflows, up to three parallel branches, all-success joins and AI proposals requiring approval.
+- Added synthetic agent blueprints and `docs/DEMO.md`. Live knowledge retrieval and the repaired agent returned the recorded SYN-17 value; native red teaming remains blocked by Foundry's hosted-session 429.
+
+## Cross-platform artefact and conversation iteration
+
+- Added metadata-driven external-agent onboarding, real indexed-data GraphQL publishing, OpenAPI-to-MCP publishing and assessment-gated Teams/Microsoft 365 package submission.
+- Added approved-connector boundaries, source secret references, synthetic Fabric workspace/service principal, Databricks identity onboarding, and scoped Bot Service permissions.
+- Added popup chat with normal-link fallback, stable thread ownership, cross-agent isolation, serialized turns, version pinning and truthful persistence copy. Real two-turn Foundry chat succeeded.
+- Improved domain circle sizes/colours, added per-artefact declared lineage, used current official homepage logo assets and expanded the executive landing-zone architecture.
+- Fixed the index Search-method collision and APIM single-argument MCP body mapping exposed by live acceptance.
+- Deployed the integration iteration to all three apps with existing state preserved. GraphQL and API-to-MCP were exercised through APIM.
+- Created and published a synthetic Fabric catalogue guide with operator credentials; its MCP query works as the operator, but the dedicated app connector still receives AI-policy refusal/403.
+- Added source-connectivity preflight and an authenticated, bounded Copilot Studio Direct Engine adapter. Provisioned a synthetic Studio guide and its explicitly approved connector application, without making the source anonymous.
+- Applied the separately approved Fabric cross-region processing grant only to the dedicated connector group, preserving existing groups.
+- Remaining live blockers are explicit: Foundry hosted red-team ACA-session 429, Fabric connector model-policy 403, and Copilot Studio's disabled app-only S2S environment preview. No assessment bypass, tenant-wide app installation, full reset or licence purchase was performed.
+
 ## Customer-neutral accelerator revision
 
 - Replaced sector-specific bootstrap content with one synthetic, cross-industry pack and removed the unused historical seed pack.
