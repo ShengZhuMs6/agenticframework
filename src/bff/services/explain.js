@@ -14,6 +14,14 @@ const urlIn = (m) => (String(m.input || m[0]).match(MCP_URL) || [])[1] || 'the M
 
 const PATTERNS = [
   {
+    test: /api-version[\s\S]*(?:does not exist|not supported|invalid)|Foundry IQ configuration is incomplete/i,
+    explain: () => ({
+      heading: 'The knowledge connection needs a configuration repair',
+      message: 'The Search MCP API version or knowledge-planning settings are incompatible. Retrying or opening another chat will not fix this. Ask the platform owner to restore the approved knowledge model settings and repair the existing Foundry connection targets. Do not reset the data or recreate the agents.',
+      fixable: true
+    })
+  },
+  {
     test: /Access denied[\s\S]*(?:managed identity|search service)|(?:search service|azure_ai_search)[\s\S]*(?:403|Access denied)/i,
     explain: () => ({
       heading: 'Foundry cannot access the Search index',

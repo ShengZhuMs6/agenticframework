@@ -1229,6 +1229,8 @@ try {
     $env:DATA_STORAGE_LOCATION    = $Location
     $env:SEARCH_ENDPOINT          = $v['SEARCH_ENDPOINT']
     $env:SEARCH_SERVICE_NAME      = $v['SEARCH_SERVICE_NAME']
+    $env:SEARCH_KNOWLEDGE_MODEL_NAME = $v['SEARCH_KNOWLEDGE_MODEL_NAME']
+    $env:SEARCH_KNOWLEDGE_MODEL_ENDPOINT = $v['SEARCH_KNOWLEDGE_MODEL_ENDPOINT']
     if (-not $v['FOUNDRY_ACCOUNT_PRINCIPAL_ID']) {
       Warn2 'The Foundry account has no system-assigned identity, so agents cannot read AI Search keylessly.'
       Info  "Azure portal → $($v['FOUNDRY_ACCOUNT_NAME']) → Identity → System assigned → On, then re-run this script."

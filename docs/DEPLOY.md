@@ -1,16 +1,16 @@
 # Data Cortex - deployment and operations
 
-This is the current runbook for `novo-demo-20260923-r3`, recorded **22 September 2026**. The [README](../README.md) contains the technical diagram; [ARCHITECTURE.md](ARCHITECTURE.md) explains boundaries and [DEMO.md](DEMO.md) contains the rehearsed presentation. Commands marked as mutations require operator approval for the actual environment; previous approvals are not standing authorization.
+This is the current runbook for `demo-neutral-20260924-r2`, recorded **24 September 2026**. The [README](../README.md) contains the technical diagram; [ARCHITECTURE.md](ARCHITECTURE.md) explains boundaries and [DEMO.md](DEMO.md) contains the rehearsed presentation. Commands marked as mutations require operator approval for the actual environment; previous approvals are not standing authorization.
 
 ## 1. Current deployment
 
-All apps run `prdcoreamlacr001.azurecr.io/cortex/web-cortex:novo-demo-20260923-r3` in `cae-cortex`, resource group `PRDCORECORTEX001`, with maintenance off.
+All web apps run `prdcoreamlacr001.azurecr.io/cortex/web-cortex:demo-neutral-20260924-r2` in `cae-cortex`, resource group `PRDCORECORTEX001`, with maintenance off.
 
 | App | Theme | Ready revision | State container |
 |---|---|---|---|
-| `cortex-web` | Defra | `cortex-web--0000032` | `state` |
-| `cortex-web-microsoft` | Microsoft | `cortex-web-microsoft--0000017` | `state-cortex-web-microsoft` |
-| `cortex-web-novo` | Novo | `cortex-web-novo--0000014` | `state-cortex-web-novo` |
+| `cortex-web` | Defra | `cortex-web--0000040` | `state` |
+| `cortex-web-microsoft` | Microsoft | `cortex-web-microsoft--0000020` | `state-cortex-web-microsoft` |
+| `cortex-web-novo` | Novo | `cortex-web-novo--0000017` | `state-cortex-web-novo` |
 
 Use the [README application links](../README.md#current-release). The original full Novo About source is preserved with SHA-256 `43f42a42f2599de9cacb0ed8590bdeccd934e28bc0a024c5ef6f79e4b924a354`.
 
@@ -81,9 +81,22 @@ az containerapp show --name <app-name> --resource-group <cortex-rg> `
 
 Repeat the approved image update for each intended app. Verify revision health, sign-in, state mode and real HTTP responses; template provisioning success alone is insufficient. Preserve per-app `PUBLIC_BASE_URL`, `CORTEX_THEME`, `STATE_CONTAINER`, all existing secret references and Entra callback URLs.
 
+The guarded equivalent preflights every selected app, rejects multi-revision traffic configurations, preserves environment settings, waits for readiness and prints each previous image for rollback:
+
+```powershell
+.\scripts\Update-CortexApps.ps1 -SubscriptionId <subscription-id> `
+  -ResourceGroup <cortex-rg> -Apps cortex-web,cortex-web-microsoft,cortex-web-novo `
+  -Image <registry>.azurecr.io/cortex/web-cortex:<unique-release-tag> -WhatIf
+# After reviewing the targets, repeat without -WhatIf.
+```
+
+Use this image-only path for code/text changes. Do not run full provisioning or bootstrap simply to refresh an example. Infrastructure changes still require a reviewed configuration/what-if: image-only deployment does not reconcile infrastructure drift.
+
+The tracked source was approximately 1.7 MB before this repair; the release build upload was approximately 447 KB compressed. `.venv` (approximately 815 MB), `node_modules`, generated vendor assets, Git history, `.azure` and environment files are excluded from image context. The virtual environment and dependency caches are left on disk, not deleted. `npm ci` and `npm run build:assets` reproduce JavaScript dependencies/assets. The web image deliberately includes operator scripts and bootstrap JSON for the separate bootstrap job.
+
 To create/reconfigure variants, review `Deploy-CortexVariants.ps1 -WhatIf` first. It requires a working direct-config source app, appends callback URLs, isolates state and refuses unrelated targets. It does not update its source app. Copying source configuration can omit later variant-specific settings, so review `CORTEX_CONNECTORS` and knowledge-model settings before using it for routine redeployment.
 
-The manual `cortex-web-bootstrap` job is separate. Inspect its image, arguments and secrets before starting it; a web rollout does not update that job automatically. Prefer explicitly ordered bootstrap stages over an unreviewed stale job.
+The manual `cortex-web-bootstrap` job is separate. Its image and approved planner settings were aligned to `demo-neutral-20260924-r2` on 24 September without starting it. Inspect its image, arguments and secrets before future use; a web rollout does not update that job automatically. Prefer explicitly ordered bootstrap stages over an unreviewed full bootstrap.
 
 ### Local development
 
@@ -138,11 +151,39 @@ Set both `SEARCH_KNOWLEDGE_MODEL_NAME` and `SEARCH_KNOWLEDGE_MODEL_ENDPOINT` onl
 
 The recorded sandbox values are `gpt-5.4-mini` and `https://prdcorefdryeus001.openai.azure.com`. The Search identity has approved Cognitive Services OpenAI User access to the Foundry account; the project identity has Search Index Data Reader. Semantic ranking uses the free tier; Search remains Basic.
 
-The stable minimal MCP contract (`2026-04-01`) was rejected by this sandbox endpoint. The rehearsed configuration uses `2026-08-01-preview`, an explicit existing planning model and extractive grounding output. Do not claim stable availability in another region or silently enable paid semantic/model capacity.
+The stable management API (`2026-04-01`) accepts knowledge-base GET/PUT but its MCP route was rejected by this sandbox endpoint. The working MCP configuration uses `2026-08-01-preview`, an explicit existing planning model and extractive grounding output. Knowledge publication now stops before writing anything when the approved model settings are absent. Do not silently enable paid semantic/model capacity.
+
+Both planner settings are wired through `infra\main.parameters.json`, the web/bootstrap-job template and local bootstrap configuration. Persist the approved values in azd before an infrastructure deployment:
+
+```powershell
+azd env set SEARCH_KNOWLEDGE_MODEL_NAME <approved-model-name>
+azd env set SEARCH_KNOWLEDGE_MODEL_ENDPOINT <approved-openai-endpoint>
+azd env set SEARCH_SEMANTIC free
+```
+
+The preprovision guard refuses to remove live planner settings or approved connector IDs when the azd values are absent/incomplete. The manual bootstrap job must be reviewed separately on future releases; do not start it as part of routine rollout.
+
+### 24 September repair and recovery boundaries
+
+Full provisioning removed the base app's planner settings and disabled semantic ranking; knowledge bootstrap then replaced 14 shared planner bindings and MCP targets with the unsupported stable contract. The name-only edit was not the cause. Only the base app had received that code deployment; the themed variants were still on the older image.
+
+The approved repair restored the existing model bindings, free semantic tier, connection targets and catalogue links in place. Seeded agent instructions, the seeded workflow name and sample README wording were neutralized. No indexes, rows, apps, identities, permissions, custom workflows or run histories were deleted. Only Usage and Supply required new agent versions; agent IDs were preserved.
+
+Private original backups are under `stcortexstatezha7pf/state/maintenance-backups/demo-repair-2026-09-24T18-02-57-090Z`; the resumed repair also retained a backup at `demo-repair-2026-09-24T18-07-06-975Z`. Preserve both. Do not restore whole state blobs over newer user activity without reviewing/merging the affected records.
+
+`scripts\repair-demo.js --state-containers=<reviewed-containers>` is read-only by default. Applying requires `--apply --writers-stopped`, verified maintenance on every affected app, the correct model settings, and an authorized network/identity. It backs up affected records privately before mutation and uses ETags for state/sample-file writes. It is an incident-repair tool, **not** a deployment hook.
+
+The app identity could read but could not update Purview catalogue metadata. Existing operator authorization was used instead; no roles were granted. `--skip-catalogue` explicitly delegates that step and does not mean the catalogue is repaired. Verify all 14 `cortexKnowledgeMcp` targets and `cortexKnowledgeReasoning=low` through the operator identity. Restart apps after the offline state repair before releasing maintenance. Historical error cards remain historical; start a new run.
 
 ## 6. Source connectors and publishing
 
 `CORTEX_CONNECTORS` is administrator-controlled metadata, not a place for secret values. Keep credentials in Container Apps secret references or supported managed identities. The browser cannot choose an arbitrary authenticated destination.
+
+An empty **Approved connector** dropdown means connector configuration is missing, even when the example text is still populated. The base app's setting was wiped by the same 24 September full provisioning. The existing `databricks`, `cortex-demo-api` and `cortex-demo-graphql` entries were restored from the working Microsoft app and persisted in azd without copying credentials or running integration provisioning. This produced base revision `0000040`; the web image remains `demo-neutral-20260924-r2`. Other apps' connector configurations were left intact.
+
+Do not run `Set-CortexIntegrations.ps1` just to fix an empty dropdown: it can provision identities/Fabric resources. Restore the reviewed metadata with existing secret references and persist the same JSON via `azd env set CORTEX_CONNECTORS <reviewed-json>`. The preprovision guard rejects losing existing connector IDs. Fabric and Studio were not added to the base app as part of this narrow repair; their separate prerequisites still apply.
+
+The approved follow-up created/reused `Acceptance - catalogue health API`, created `Acceptance - operations GraphQL MCP`, and created the draft `Acceptance - Databricks agent` on the base app. Both MCP tools were invoked through APIM and the wrapper delegated to Databricks without a native assessment. The updated local `test-live-publishing.js` supports `--graphql-mcp` for the existing-GraphQL-to-MCP path; `--graphql` retains the separate indexed-data GraphQL source path. It was uploaded temporarily for this run, then removed; no web image rebuild was needed for the configuration repair. A newly published APIM route briefly returned 404 while propagating, then succeeded without recreation.
 
 | UI category | Rehearsed path / prerequisite |
 |---|---|

@@ -1,5 +1,15 @@
 # Data Cortex - change report
 
+## Current: customer-neutral demo and deployment repair
+
+Recorded 24 September 2026, release `demo-neutral-20260924-r2`.
+
+- Follow-up Share repair: restored the base app's three approved REST/GraphQL/Databricks connector entries without copying secrets or reprovisioning integrations. Persisted the metadata in azd, added a connector-removal guard, and covered actual preselected dropdown values in browser regression tests.
+- Restored 14 shared Foundry IQ model bindings, preview MCP targets and catalogue links in place after provisioning had removed planner settings and disabled free semantic ranking. Missing configuration now fails before knowledge-resource writes.
+- Preserved all three themes/logos; neutralized seeded examples, Usage/Supply instructions and the prepared workflow name without deleting user content or historical runs.
+- Aligned all three web images and restored durable state operation. Updated the manual bootstrap job's image/planner settings without executing it. No infrastructure reset, new model, permission grant or paid semantic tier.
+- Added image-only rollout safeguards, planner settings in infrastructure/bootstrap, environment/cache exclusions and targeted regression coverage. See [DEPLOY.md](docs/DEPLOY.md) for commands and private backup locations.
+
 ## Documentation alignment
 
 - Simplified the README architecture to four large, labelled technology icons with a single left-to-right data flow. Purview and API Management appear as supporting services; infrastructure inventory, optional channels and detailed contracts remain in the architecture guide.
@@ -8,7 +18,7 @@
 - Separated deployed/rehearsed services from conditional channels, configured monitoring and production design gaps.
 - Replaced superseded operational guidance with current bootstrap, single-writer state, reviewed reset and advisory assurance procedures.
 
-## Current: Novo operational demo refresh
+## Historical: Novo operational demo refresh
 
 Recorded 22 September 2026. The same image is deployed to Defra (`cortex-web--0000032`), Microsoft (`cortex-web-microsoft--0000017`) and Novo (`cortex-web-novo--0000014`). See [README](README.md) for the maintained architecture and [DEPLOY.md](docs/DEPLOY.md) for current commands. Release history below describes its own point in time, not current permissions or deployment restrictions.
 

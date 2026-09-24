@@ -4,7 +4,7 @@ import { readFileSync } from 'node:fs';
 import { createHash } from 'node:crypto';
 import { bootstrapKnowledge } from '../scripts/bootstrap-knowledge.js';
 import { generateProduct, SAMPLE_PRODUCTS } from '../scripts/sample-data.js';
-import { publishingDefaults } from '../src/web/demo.js';
+import { DEMO_PROMPTS, publishingDefaults } from '../src/web/demo.js';
 import { demoWorkflowForm } from '../scripts/bootstrap-demo.js';
 import { DEMO_JOURNEY } from '../src/bff/services/demo-blueprints.js';
 import { workflowStages, computeNextRun, handoffSources } from '../src/bff/services/automations.js';
@@ -67,6 +67,13 @@ test('publishing defaults resolve actual available resources rather than invente
   assert.equal(values.sourceId, 'real-id');
   assert.equal(publishingDefaults('api-mcp', 'graphql', { connectors: [] }).connector, '');
   assert.match(publishingDefaults('api-mcp', 'graphql', { connectors: [{ id: 'cortex-demo-graphql' }] }).graphqlQuery, /rows\(first: 2\)/);
+});
+
+test('all demo prompts, blueprints and publishing defaults are customer-neutral', () => {
+  const defaults = ['knowledge', 'api-mcp', 'm365', 'external-agent'].flatMap((kind) =>
+    ['', 'rest', 'graphql'].map((protocol) => publishingDefaults(kind, protocol, {})));
+  assert.doesNotMatch(JSON.stringify([DEMO_PROMPTS, DEMO_JOURNEY, defaults]), /\bnovo\b/i);
+  assert.doesNotMatch(generateProduct('cx-demo-api-usage').readme, /\bnovo\b/i);
 });
 
 test('the five-agent demo uses three parallel branches and manual runs only', () => {

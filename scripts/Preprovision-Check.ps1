@@ -44,6 +44,30 @@ $createModel = $env:CREATE_MODEL_DEPLOYMENT
 # Read what the apps are actually running and hand it back to azd, so this
 # provision keeps the deployed code instead of reverting it.
 if ($rg) {
+  $exists = az group exists -n $rg --only-show-errors
+  if ($LASTEXITCODE -ne 0) { throw 'Cannot inspect the target resource group.' }
+  $apps = '[]'
+  if ($exists -eq 'true') {
+    $apps = az containerapp list -g $rg --only-show-errors -o json
+    if ($LASTEXITCODE -ne 0) { throw 'Cannot inspect existing apps. Stop rather than risk overwriting their configuration.' }
+  }
+  $web = @($apps | ConvertFrom-Json) | Where-Object name -eq 'cortex-web'
+  if ($web) {
+    $liveJson = ($web.properties.template.containers[0].env | Where-Object name -eq 'CORTEX_CONNECTORS').value
+    $liveConnectors = if ($liveJson) { @($liveJson | ConvertFrom-Json) } else { @() }
+    $desiredConnectors = if ($env:CORTEX_CONNECTORS) { @($env:CORTEX_CONNECTORS | ConvertFrom-Json) } else { @() }
+    $missingConnectors = @($liveConnectors | Where-Object { $_.id -notin $desiredConnectors.id })
+    if ($missingConnectors.Count) {
+      throw "Provisioning would remove approved connectors: $($missingConnectors.id -join ', '). Persist the reviewed CORTEX_CONNECTORS metadata in azd, or use scripts\Update-CortexApps.ps1 for an image-only rollout."
+    }
+    foreach ($key in @('SEARCH_KNOWLEDGE_MODEL_NAME','SEARCH_KNOWLEDGE_MODEL_ENDPOINT')) {
+      $live = @($web.properties.template.containers[0].env | Where-Object name -eq $key)
+      $desired = [Environment]::GetEnvironmentVariable($key)
+      if ($live.Count -and $live[0].value -and !$desired) {
+        throw "Provisioning would remove $key. Set the approved value with azd env set, or use scripts\Update-CortexApps.ps1 for an image-only rollout."
+      }
+    }
+  }
   foreach ($svc in @(
     @{ App = 'cortex-web';          Var = 'SERVICE_WEB_IMAGE_NAME' },
     @{ App = 'cortex-purview-mcp';  Var = 'SERVICE_PURVIEW_MCP_IMAGE_NAME' }

@@ -204,6 +204,11 @@ param searchSku string = 'basic'
 @allowed(['disabled', 'free', 'standard'])
 param searchSemantic string = 'disabled'
 
+@description('Approved existing knowledge planner model. Required for Foundry IQ publication; does not create a model.')
+param searchKnowledgeModelName string = ''
+@description('Approved Azure OpenAI endpoint for knowledge planning.')
+param searchKnowledgeModelEndpoint string = ''
+
 @description('Object id of the person (or pipeline identity) deploying, so bootstrap can upload the sample files. Deploy-Cortex.ps1 fills it in.')
 param deployerPrincipalId string = ''
 
@@ -561,6 +566,8 @@ module containerApps 'modules/containerapps.bicep' = {
     foundryResourceGroup: effectiveFoundryRg
     purviewAccountName: effectivePurviewName
     searchEndpoint: searchEndpoint
+    searchKnowledgeModelName: searchKnowledgeModelName
+    searchKnowledgeModelEndpoint: searchKnowledgeModelEndpoint
     searchServiceName: createSearch ? searchServiceName : ''
     dataStorageAccount: createData ? data!.outputs.dataAccountName : ''
     dataContainer: createData ? data!.outputs.dataContainerName : 'products'
@@ -645,6 +652,8 @@ output FOUNDRY_ACCOUNT_PRINCIPAL_ID string = createFoundry ? foundryNew!.outputs
 output PURVIEW_ACCOUNT_PRINCIPAL_ID string = createPurview ? purviewNew!.outputs.principalId : purviewExisting!.outputs.principalId
 output SEARCH_SERVICE_NAME string = createSearch ? searchServiceName : ''
 output SEARCH_ENDPOINT string = searchEndpoint
+output SEARCH_KNOWLEDGE_MODEL_NAME string = searchKnowledgeModelName
+output SEARCH_KNOWLEDGE_MODEL_ENDPOINT string = searchKnowledgeModelEndpoint
 output DATA_STORAGE_ACCOUNT string = createData ? data!.outputs.dataAccountName : ''
 output DATA_CONTAINER string = createData ? data!.outputs.dataContainerName : 'products'
 output STATE_STORAGE_ACCOUNT string = createData ? data!.outputs.stateAccountName : ''

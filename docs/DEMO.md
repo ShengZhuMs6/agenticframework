@@ -1,13 +1,13 @@
-# Your Novo Cortex demo script
+# Your Cortex demo script
 ## 23 September 2026 · approximately 18–20 minutes
 
 **Demo app:** https://cortex-web-novo.icybeach-1b7b9f0d.northeurope.azurecontainerapps.io
 
 **Opening line:** “Cortex connects the Microsoft platforms we already have, so people can discover governed data, turn it into useful agents and reuse those capabilities without rebuilding every integration.”
 
-Everything below uses synthetic, non-clinical data. The services and responses are real; these are not Novo company records. The examples were rehearsed on 22 September. Cloud availability can change, so do the quick check below before the audience arrives.
+Everything below uses synthetic, non-clinical data. The services and responses are real; these are not real company records. The examples were rehearsed on 22 September and the five-agent workflow was exercised again after the 24 September repair. Cloud availability can change, so do the quick check below before the audience arrives.
 
-**Release:** `novo-demo-20260923-r3`, shared by all three apps. For the maintained technical solution diagram, use [README](../README.md#technical-solution-architecture); the restored About page is the original marketing narrative. [Architecture](ARCHITECTURE.md) explains service identities and data flows, and [Deployment](DEPLOY.md) covers operator procedures.
+**Release:** `demo-neutral-20260924-r2`, shared by all three web apps. Existing themes and logos are unchanged; prefilled examples are customer-neutral. For the maintained technical solution diagram, use [README](../README.md#technical-solution-architecture); the restored About page is the original marketing narrative. [Architecture](ARCHITECTURE.md) explains service identities and data flows, and [Deployment](DEPLOY.md) covers operator procedures.
 
 **What “works” means here:** the listed supported paths were exercised live. This does not promise identical AI wording, uninterrupted cloud availability, tenant installation or an unblocked native red-team service. The infrastructure and data reset are already complete; none of the presentation steps authorizes another reset.
 
@@ -81,7 +81,7 @@ The required example fields are prefilled; consent boxes are intentionally not p
 | [REST API as MCP](https://cortex-web-novo.icybeach-1b7b9f0d.northeurope.azurecontainerapps.io/share?kind=api-mcp&protocol=rest) | `cortex-demo-api`; prefilled OpenAPI | Publish the selected catalogue-health GET operation. The MCP tool was listed and invoked successfully against live catalogue health. |
 | [GraphQL API as MCP](https://cortex-web-novo.icybeach-1b7b9f0d.northeurope.azurecontainerapps.io/share?kind=api-mcp&protocol=graphql) | `cortex-demo-graphql`; path `graphql`; prefilled query | Publish a fixed, read-only GraphQL query as MCP. It returned two actual indexed inventory rows through APIM. |
 | [Existing agent](https://cortex-web-novo.icybeach-1b7b9f0d.northeurope.azurecontainerapps.io/share?kind=external-agent) | Databricks; `databricks-gpt-oss-20b` | Create a draft wrapper, then chat. Point to `source_agent` / `invoke`: the connected source is actually called, not replaced by a generic wrapper answer. |
-| [Teams / Microsoft 365 Copilot](https://cortex-web-novo.icybeach-1b7b9f0d.northeurope.azurecontainerapps.io/share?kind=m365) | Service analyst; **Novo demo operations** | Download the real ZIP package. Show the manifest and installation instructions; tenant installation is a separate approval step. |
+| [Teams / Microsoft 365 Copilot](https://cortex-web-novo.icybeach-1b7b9f0d.northeurope.azurecontainerapps.io/share?kind=m365) | Service analyst; **Demo operations** | Download the real ZIP package. Show the manifest and installation instructions; tenant installation is a separate approval step. |
 
 **GraphQL query already populated:**
 
@@ -117,7 +117,7 @@ Open [Set up an automation](https://cortex-web-novo.icybeach-1b7b9f0d.northeurop
 
 **Do:** Generate the AI proposal and review the selected agents and stages. AI proposes; the user approves. Keep **Run manually** for the demo.
 
-For the already rehearsed sequence, open [Demo - Novo operations briefing](https://cortex-web-novo.icybeach-1b7b9f0d.northeurope.azurecontainerapps.io/automate/AUT-0001).
+For the already rehearsed sequence, open [Demo - Operations briefing](https://cortex-web-novo.icybeach-1b7b9f0d.northeurope.azurecontainerapps.io/automate/AUT-0001).
 
 1. Usage, Supply and Quality analysts run **in parallel**.
 2. Service analysis waits for all three, preserves their findings and adds its evidence.

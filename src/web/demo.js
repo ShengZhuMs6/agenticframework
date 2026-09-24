@@ -41,7 +41,7 @@ export function publishingDefaults(kind, protocol, { sources = [], agents = [], 
   };
   if (kind === 'm365') return {
     sourceId: agents.find((agent) => agent.name === 'Demo - Service analyst')?.id || '',
-    name: 'demo operations', tip: 'Download a valid package for the seeded Service analyst. Installation and chat in Teams/Microsoft 365 require tenant approval and channel prerequisites.'
+    name: 'Demo operations', tip: 'Download a valid package for the seeded Service analyst. Installation and chat in Teams/Microsoft 365 require tenant approval and channel prerequisites.'
   };
   if (kind === 'external-agent') return {
     connector: connectors.find((connector) => connector.provider === 'databricks')?.id || '',

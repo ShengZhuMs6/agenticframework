@@ -8,15 +8,15 @@ Ask a question or search the catalogue, build a data-backed agent, share an arte
 
 ## Current release
 
-Last recorded deployment and rehearsal: **22 September 2026**, for the 23 September demonstration. All three apps use `prdcoreamlacr001.azurecr.io/cortex/web-cortex:novo-demo-20260923-r3`. These are dated observations, not a continuous availability guarantee.
+Latest repair and deployment: **24 September 2026**. All three web apps use `prdcoreamlacr001.azurecr.io/cortex/web-cortex:demo-neutral-20260924-r2`. Shared knowledge connections were repaired in place and the five-step workflow completed using real tools. These are dated observations, not a continuous availability guarantee.
 
 | Presentation | Application | Ready revision | State container |
 |---|---|---|---|
-| [Novo demo](https://cortex-web-novo.icybeach-1b7b9f0d.northeurope.azurecontainerapps.io) | `cortex-web-novo` | `0000014` | `state-cortex-web-novo` |
-| [Microsoft](https://cortex-web-microsoft.icybeach-1b7b9f0d.northeurope.azurecontainerapps.io) | `cortex-web-microsoft` | `0000017` | `state-cortex-web-microsoft` |
-| [Defra](https://cortex-web.icybeach-1b7b9f0d.northeurope.azurecontainerapps.io) | `cortex-web` | `0000032` | `state` |
+| [Novo theme](https://cortex-web-novo.icybeach-1b7b9f0d.northeurope.azurecontainerapps.io) | `cortex-web-novo` | `0000017` | `state-cortex-web-novo` |
+| [Microsoft](https://cortex-web-microsoft.icybeach-1b7b9f0d.northeurope.azurecontainerapps.io) | `cortex-web-microsoft` | `0000020` | `state-cortex-web-microsoft` |
+| [Defra](https://cortex-web.icybeach-1b7b9f0d.northeurope.azurecontainerapps.io) | `cortex-web` | `0000040` | `state` |
 
-The full original Novo About content is preserved. Theme changes do not create separate tenants or isolated backend estates.
+The existing names, logos, colours and full original About content are preserved. Prefilled examples and seeded demo instructions are customer-neutral; custom saved content and historical runs are not rewritten. Theme changes do not create separate tenants or isolated backend estates.
 
 ## Technical solution architecture
 
@@ -51,7 +51,7 @@ For service identities, API contracts, infrastructure details and known blockers
 | Assurance | Microsoft Responsible AI / NIST mappings, current-version scan evidence, browser axe checks and manual review records; advisory publishing requires explicit acknowledgement |
 | External prerequisites | Native red-team runs blocked before sampling by hosted ACA-session 429; Fabric connector model-policy and Studio S2S restrictions remain; tenant channel installation and manual WCAG sign-off are not completed claims |
 
-The live Novo workflow completed all five steps in approximately 37 and 53 seconds. Those are rehearsal timings, not latency guarantees. See [the presenter script](docs/DEMO.md) for exact prompts, expected values and fallback wording.
+The repaired workflow completed all five steps in approximately 38 seconds on 24 September. This is a rehearsal timing, not a latency guarantee. See [the presenter script](docs/DEMO.md) for exact prompts, expected values and fallback wording.
 
 ## Developer start
 
@@ -72,6 +72,8 @@ For live local development, follow [the isolated local-state instructions](docs/
 ## Deployment and reproducible demo data
 
 `azure.yaml` deploys the base `web` and `purview-mcp` services; it does not automatically align both themed variants or the manual bootstrap job. `infra\main.bicep` is the active infrastructure entry point. The root `containerapps.bicep` is a legacy template, not the azd entry point.
+
+For routine code changes, build one uniquely tagged image and use `scripts\Update-CortexApps.ps1` with an explicit subscription, resource group and all intended app names. Start with `-WhatIf`. This updates images only: no provisioning, bootstrap, theme copying or state reset. See the [rollout commands](docs/DEPLOY.md#4-deploy-or-update-applications).
 
 Bootstrap stages are **catalogue -> sample files/scan -> asset links -> indexes -> knowledge connections -> demo agents/workflow**, with APIM skills/connections alongside them. Source and knowledge setup must be verified before agent creation. Use [DEPLOY.md](docs/DEPLOY.md), not an unreviewed full deployment, for an existing estate.
 

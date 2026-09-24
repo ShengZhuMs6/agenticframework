@@ -172,14 +172,13 @@ class LiveSearch {
   }
 
   async ensureKnowledgeBase({ name, indexName, description }) {
-    const planned = Boolean(this.cfg.knowledgeModelName || this.cfg.knowledgeModelEndpoint);
-    if (planned && (!this.cfg.knowledgeModelName || !this.cfg.knowledgeModelEndpoint || !config.foundry.model)) {
-      throw new Error('Configure both SEARCH_KNOWLEDGE_MODEL_NAME and SEARCH_KNOWLEDGE_MODEL_ENDPOINT and an existing FOUNDRY_MODEL deployment before using model planning.');
+    // Missing deployment settings must never downgrade a shared knowledge base
+    // to the stable management API, whose MCP route is not supported.
+    if (!this.cfg.knowledgeModelName || !this.cfg.knowledgeModelEndpoint || !config.foundry.model) {
+      throw new Error('Foundry IQ configuration is incomplete. Restore the approved SEARCH_KNOWLEDGE_MODEL_NAME and SEARCH_KNOWLEDGE_MODEL_ENDPOINT and existing FOUNDRY_MODEL deployment. No knowledge resources were changed.');
     }
-    if (planned) {
-      const endpoint = new URL(this.cfg.knowledgeModelEndpoint);
-      if (endpoint.protocol !== 'https:' || endpoint.username || endpoint.password || endpoint.search || endpoint.hash) throw new Error('The knowledge model endpoint must be credential-free HTTPS.');
-    }
+    const endpoint = new URL(this.cfg.knowledgeModelEndpoint);
+    if (endpoint.protocol !== 'https:' || endpoint.username || endpoint.password || endpoint.search || endpoint.hash) throw new Error('The knowledge model endpoint must be credential-free HTTPS.');
     const definition = await this.getIndex(indexName);
     const semantic = definition?.semantic?.defaultConfiguration || definition?.semantic?.configurations?.[0]?.name;
     if (!semantic) throw new Error('The index needs a semantic configuration before creating a Foundry IQ knowledge source. Review Search prerequisites; do not enable paid features without approval.');
@@ -190,19 +189,17 @@ class LiveSearch {
       body: { name: sourceName, kind: 'searchIndex', description,
         searchIndexParameters: { searchIndexName: indexName, semanticConfigurationName: semantic, sourceDataFields: [{ name: 'title' }, { name: 'url' }], searchFields: [] } }
     });
-    const retrievalVersion = planned ? '2026-08-01-preview' : apiVersion;
+    const retrievalVersion = '2026-08-01-preview';
     await this._fetch(`/knowledgebases/${encodeURIComponent(name)}`, {
       method: 'PUT', apiVersion: retrievalVersion, body: { name, description, knowledgeSources: [{ name: sourceName }],
-        ...(planned ? { models: [{ kind: 'azureOpenAI', azureOpenAIParameters: {
+        models: [{ kind: 'azureOpenAI', azureOpenAIParameters: {
           resourceUri: this.cfg.knowledgeModelEndpoint, deploymentId: config.foundry.model, modelName: this.cfg.knowledgeModelName
-        } }], outputMode: 'extractiveData', retrievalReasoningEffort: { kind: 'low' } } : {})
+        } }], outputMode: 'extractiveData', retrievalReasoningEffort: { kind: 'low' }
       }
     });
     const confirmed = await this._fetch(`/knowledgebases/${encodeURIComponent(name)}`, { apiVersion: retrievalVersion });
     if (!confirmed?.knowledgeSources?.some((source) => source.name === sourceName)) throw new Error('Search did not confirm the knowledge source binding.');
-    // The stable MCP contract always uses minimal extractive retrieval.
-    // Preview MCP can override the stored effort and require a planning model.
-    return { name, sourceName, reasoning: planned ? 'low' : 'minimal', mcp: `${this.endpoint.replace(/\/$/, '')}/knowledgebases/${encodeURIComponent(name)}/mcp?api-version=${retrievalVersion}` };
+    return { name, sourceName, reasoning: 'low', mcp: `${this.endpoint.replace(/\/$/, '')}/knowledgebases/${encodeURIComponent(name)}/mcp?api-version=${retrievalVersion}` };
   }
 
   /* -------------------------------------------------------- data sources */

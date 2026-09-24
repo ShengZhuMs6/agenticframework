@@ -103,7 +103,7 @@ test('Try examples fill inputs without submitting or preselecting consent', { sk
   const before = page.url();
   await page.getByRole('button', { name: 'Use this example', exact: true }).click();
   assert.equal(page.url(), before);
-  assert.match(await page.locator('#q').inputValue(), /synthetic Operations briefing/);
+  assert.match(await page.locator('#q').inputValue(), /synthetic operations briefing/);
   await page.goto(fixture.url + '/share?kind=api-mcp&protocol=graphql');
   assert.match(await page.locator('#pub-query').inputValue(), /rows\(first: 2\)/);
   assert.equal(await page.locator('input[name="confirm"]').isChecked(), false);
@@ -118,4 +118,32 @@ test('request holder selection preserves the purpose and cadence entered by the 
   assert.ok(await page.locator('input[name="holderEntryId"]').count() > 0);
   assert.equal(await page.locator('#purpose').inputValue(), 'Keep this purpose while I choose a holder.');
   assert.equal(await page.locator('#c-month').isChecked(), true);
+});
+
+test('Share selects real approved example connectors for REST, GraphQL and existing agents', { skip: !available }, async () => {
+  const original = process.env.CORTEX_CONNECTORS;
+  process.env.CORTEX_CONNECTORS = JSON.stringify([
+    { id: 'cortex-demo-api', name: 'Synthetic REST', provider: 'openapi', baseUrl: 'https://rest.example.test' },
+    { id: 'cortex-demo-graphql', name: 'Synthetic GraphQL', provider: 'openapi', baseUrl: 'https://graphql.example.test' },
+    { id: 'databricks', name: 'Existing demo agent', provider: 'databricks', baseUrl: 'https://agent.example.test' }
+  ]);
+  try {
+    for (const [route, expected] of [
+      ['/share?kind=api-mcp&protocol=rest', 'cortex-demo-api'],
+      ['/share?kind=api-mcp&protocol=graphql', 'cortex-demo-graphql'],
+      ['/share?kind=external-agent', 'databricks']
+    ]) {
+      await page.goto(fixture.url + route);
+      assert.equal(await page.locator('#pub-connector').inputValue(), expected);
+      assert.ok(await page.locator('#pub-connector option').count() > 1);
+      assert.doesNotMatch(await page.locator('#pub-name').inputValue(), /novo/i);
+      assert.equal(await page.locator('input[name="confirm"]').isChecked(), false);
+    }
+    process.env.CORTEX_CONNECTORS = '[]';
+    await page.goto(fixture.url + '/share?kind=external-agent');
+    assert.equal(await page.locator('#pub-connector').inputValue(), '', 'never fabricate an unconfigured connector');
+  } finally {
+    if (original === undefined) delete process.env.CORTEX_CONNECTORS;
+    else process.env.CORTEX_CONNECTORS = original;
+  }
 });

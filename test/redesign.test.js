@@ -168,7 +168,13 @@ test('Search denial explains the failing service rather than blaming a popup', (
   assert.equal(error.heading, 'Foundry cannot access the Search index');
 });
 
-test('knowledge base pins stable minimal extractive MCP without a planning model', async () => {
+test('unsupported MCP API version is diagnosed as configuration, not a missing model', () => {
+  const error = explainError(new Error('The remote MCP server rejected the request: The version indicated by the api-version query string parameter does not exist.'));
+  assert.equal(error.heading, 'The knowledge connection needs a configuration repair');
+  assert.match(error.message, /Do not reset/);
+});
+
+test('missing knowledge planning settings fail before downgrading shared resources', async () => {
   const original = index.search._fetch;
   const calls = [];
   index.search._fetch = async (path, options = {}) => {
@@ -178,11 +184,8 @@ test('knowledge base pins stable minimal extractive MCP without a planning model
     return {};
   };
   try {
-    const result = await index.search.ensureKnowledgeBase({ name: 'demo', indexName: 'index', description: 'Demo' });
-    const put = calls.find((call) => call.path === '/knowledgebases/demo' && call.method === 'PUT');
-    assert.equal(put.body.models, undefined);
-    assert.equal(put.apiVersion, '2026-04-01');
-    assert.match(result.mcp, /api-version=2026-04-01$/);
+    await assert.rejects(index.search.ensureKnowledgeBase({ name: 'demo', indexName: 'index', description: 'Demo' }), /configuration is incomplete/);
+    assert.equal(calls.length, 0, 'do not touch Search when deployment configuration is missing');
   } finally { index.search._fetch = original; }
 });
 

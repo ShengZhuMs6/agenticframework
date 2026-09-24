@@ -59,6 +59,8 @@
     "createSearch":           { "value": "${CREATE_SEARCH=true}" },
     "searchSku":              { "value": "${SEARCH_SKU=basic}" },
     "searchSemantic":         { "value": "${SEARCH_SEMANTIC=disabled}" },
+    "searchKnowledgeModelName": { "value": "${SEARCH_KNOWLEDGE_MODEL_NAME=}" },
+    "searchKnowledgeModelEndpoint": { "value": "${SEARCH_KNOWLEDGE_MODEL_ENDPOINT=}" },
     "deployerPrincipalId":    { "value": "${DEPLOYER_PRINCIPAL_ID=}" },
     "chatPolicy":             { "value": "${CORTEX_CHAT_POLICY=all-staff}" },
     "connectorConfiguration": { "value": "${CORTEX_CONNECTORS=[]}" },

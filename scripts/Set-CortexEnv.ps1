@@ -136,6 +136,8 @@ try {
   $env:DATA_STORAGE_LOCATION  = $v['AZURE_LOCATION']
   $env:SEARCH_ENDPOINT        = $v['SEARCH_ENDPOINT']
   $env:SEARCH_SERVICE_NAME    = $v['SEARCH_SERVICE_NAME']
+  $env:SEARCH_KNOWLEDGE_MODEL_NAME = $v['SEARCH_KNOWLEDGE_MODEL_NAME']
+  $env:SEARCH_KNOWLEDGE_MODEL_ENDPOINT = $v['SEARCH_KNOWLEDGE_MODEL_ENDPOINT']
 
   # Deliberately NOT set. The vault is unreachable from here, and leaving this
   # empty is what makes the adapter skip cleanly instead of spending its whole

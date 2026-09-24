@@ -100,6 +100,8 @@ param foundryProjectName string = ''
 param foundryResourceGroup string = ''
 param purviewAccountName string = ''
 param searchEndpoint string = ''
+param searchKnowledgeModelName string = ''
+param searchKnowledgeModelEndpoint string = ''
 param searchServiceName string = ''
 param dataStorageAccount string = ''
 param dataContainer string = 'products'
@@ -281,6 +283,8 @@ var roundFourEnv = [
   { name: 'FOUNDRY_RESOURCE_GROUP', value: foundryResourceGroup }
   { name: 'PURVIEW_ACCOUNT_NAME', value: purviewAccountName }
   { name: 'SEARCH_ENDPOINT', value: searchEndpoint }
+  { name: 'SEARCH_KNOWLEDGE_MODEL_NAME', value: searchKnowledgeModelName }
+  { name: 'SEARCH_KNOWLEDGE_MODEL_ENDPOINT', value: searchKnowledgeModelEndpoint }
   { name: 'SEARCH_SERVICE_NAME', value: searchServiceName }
   { name: 'DATA_STORAGE_ACCOUNT', value: dataStorageAccount }
   { name: 'DATA_CONTAINER', value: dataContainer }

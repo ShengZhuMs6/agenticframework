@@ -9,3 +9,11 @@ docs
 *.md
 Dockerfile*
 **/.mcs
+.env
+.env.*
+**/.env
+**/.env.*
+**/node_modules
+**/__pycache__
+*.log
+src/web/assets/vendor
