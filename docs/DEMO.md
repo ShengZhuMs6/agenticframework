@@ -33,7 +33,7 @@ Open [Start](https://cortex-web-novo.icybeach-1b7b9f0d.northeurope.azurecontaine
 
 **Try:**
 
-> Which inventory, delivery, quality, service performance and API usage sources can support a synthetic Novo operations briefing?
+> Which inventory, delivery, quality, service performance and API usage sources can support a synthetic operations briefing?
 
 **Do:** Show Auto / Ask / Search. Submit the question, then point to the catalogue sources and any access limitations. Return to Start and search **inventory** to show the Cortex catalogue and filters.
 

@@ -43,7 +43,7 @@ ${metadata.description}
 
 Domain: ${metadata.domain}. Sensitivity: ${metadata.sensitivity}. Licence: ${metadata.licence}.
 Rows: ${count}. Minimum aggregation: ${metadata.minimumAggregation || 'None stated'}.
-Reporting window: 1-21 September 2026. Sites and business units are fictional; this is not Novo operational or clinical data.
+Reporting window: 1-21 September 2026. Sites and business units are fictional; this is not operational or clinical data.
 
 | Column | Type | Meaning |
 |---|---|---|

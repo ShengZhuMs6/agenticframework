@@ -1,11 +1,11 @@
 import { esc, attr } from './layout.js';
 
 export const DEMO_PROMPTS = {
-  ask: 'Which inventory, delivery, quality, service performance and API usage sources can support a synthetic Novo operations briefing?',
+  ask: 'Which inventory, delivery, quality, service performance and API usage sources can support a synthetic operations briefing?',
   record: 'Find record SYN-17 in the attached knowledge source. Return its recorded metric value, source and reporting date. Do not calculate an estate-wide total.',
-  request: 'Please review the synthetic operational capacity sample for a one-off Novo operations briefing. State its limitations and provide only an aggregate answer.',
+  request: 'Please review the synthetic operational capacity sample for a one-off operations briefing. State its limitations and provide only an aggregate answer.',
   purpose: 'Prepare a synthetic, non-clinical demonstration briefing for a human reviewer; not an operational decision.',
-  goal: 'Prepare a synthetic Novo operations briefing. First run the Usage, Supply and Quality analysts in parallel, then ask the Service analyst to incorporate those drafts with service evidence, then ask the Evidence reviewer to produce the final cited draft. Use at most five steps and do not publish or send anything.'
+  goal: 'Prepare a synthetic operations briefing. First run the Usage, Supply and Quality analysts in parallel, then ask the Service analyst to incorporate those drafts with service evidence, then ask the Evidence reviewer to produce the final cited draft. Use at most five steps and do not publish or send anything.'
 };
 
 export function demoTip({ text, fields = {}, href, note = '' }) {
@@ -41,7 +41,7 @@ export function publishingDefaults(kind, protocol, { sources = [], agents = [], 
   };
   if (kind === 'm365') return {
     sourceId: agents.find((agent) => agent.name === 'Demo - Service analyst')?.id || '',
-    name: 'Novo demo operations', tip: 'Download a valid package for the seeded Service analyst. Installation and chat in Teams/Microsoft 365 require tenant approval and channel prerequisites.'
+    name: 'demo operations', tip: 'Download a valid package for the seeded Service analyst. Installation and chat in Teams/Microsoft 365 require tenant approval and channel prerequisites.'
   };
   if (kind === 'external-agent') return {
     connector: connectors.find((connector) => connector.provider === 'databricks')?.id || '',

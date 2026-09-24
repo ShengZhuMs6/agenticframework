@@ -103,7 +103,7 @@ test('Try examples fill inputs without submitting or preselecting consent', { sk
   const before = page.url();
   await page.getByRole('button', { name: 'Use this example', exact: true }).click();
   assert.equal(page.url(), before);
-  assert.match(await page.locator('#q').inputValue(), /synthetic Novo operations briefing/);
+  assert.match(await page.locator('#q').inputValue(), /synthetic Operations briefing/);
   await page.goto(fixture.url + '/share?kind=api-mcp&protocol=graphql');
   assert.match(await page.locator('#pub-query').inputValue(), /rows\(first: 2\)/);
   assert.equal(await page.locator('input[name="confirm"]').isChecked(), false);

@@ -8,7 +8,7 @@ Ask a question or search the catalogue, build a data-backed agent, share an arte
 
 ## Current release
 
-Last recorded deployment and rehearsal: **22 September 2026**, for the 23 September Novo demonstration. All three apps use `prdcoreamlacr001.azurecr.io/cortex/web-cortex:novo-demo-20260923-r3`. These are dated observations, not a continuous availability guarantee.
+Last recorded deployment and rehearsal: **22 September 2026**, for the 23 September demonstration. All three apps use `prdcoreamlacr001.azurecr.io/cortex/web-cortex:novo-demo-20260923-r3`. These are dated observations, not a continuous availability guarantee.
 
 | Presentation | Application | Ready revision | State container |
 |---|---|---|---|
